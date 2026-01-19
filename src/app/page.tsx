@@ -22,23 +22,13 @@ export default async function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-              Welcome, {profile?.name || user.email}
-            </h1>
-            <p className="mt-1 text-sm text-gray-600">
-              Your main currency: {profile?.default_currency || "Not set"}
-            </p>
-          </div>
-          <form action="/auth/signout" method="post">
-            <button
-              type="submit"
-              className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-800"
-            >
-              Sign out
-            </button>
-          </form>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+            Добро пожаловать, {profile?.name || user.email}
+          </h1>
+          <p className="mt-1 text-sm text-gray-600">
+            Основная валюта: {profile?.default_currency || "Не указана"}
+          </p>
         </div>
 
         <div className="rounded-lg bg-white p-6 shadow">
