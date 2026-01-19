@@ -27,7 +27,7 @@ export default function PoolsClient({
 
   // Filter pools based on active/archived view
   const displayedPools = pools.filter((pool) =>
-    showArchived ? !pool.is_active : pool.is_active
+    showArchived ? !pool.is_active : pool.is_active,
   );
 
   const handleCreatePool = async (e: React.FormEvent) => {
@@ -78,9 +78,7 @@ export default function PoolsClient({
 
       if (response.ok) {
         setPools(
-          pools.map((p) =>
-            p.id === poolId ? { ...p, is_active: false } : p
-          )
+          pools.map((p) => (p.id === poolId ? { ...p, is_active: false } : p)),
         );
       } else {
         console.error("Failed to archive pool");
@@ -121,7 +119,7 @@ export default function PoolsClient({
 
     if (
       !confirm(
-        "Are you sure you want to PERMANENTLY delete this pool? This action cannot be undone!"
+        "Are you sure you want to PERMANENTLY delete this pool? This action cannot be undone!",
       )
     )
       return;
@@ -207,77 +205,75 @@ export default function PoolsClient({
           {displayedPools.length === 0 ? (
             <div className="rounded-lg bg-white p-12 text-center shadow">
               <p className="text-gray-500">
-                {showArchived
-                  ? "No archived pools"
-                  : "No active pools found"}
+                {showArchived ? "No archived pools" : "No active pools found"}
               </p>
             </div>
           ) : (
             displayedPools.map((pool) => (
-            <div
-              key={pool.id}
-              className="rounded-lg bg-white p-6 shadow transition-shadow hover:shadow-md"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div
-                    className="h-12 w-12 rounded-full"
-                    style={{ backgroundColor: pool.color }}
-                  />
-                  <div>
-                    <h3 className="font-semibold text-gray-900">
-                      {pool.name}
-                    </h3>
-                    <p className="text-sm text-gray-500 capitalize">
-                      {pool.type}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-gray-900">
-                      {currencySymbol}
-                      {getPoolBalance(pool.id).toFixed(2)}
-                    </p>
-                  </div>
-
-                  {showArchived ? (
-                    // Archived pool actions
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleRestorePool(pool.id)}
-                        disabled={isLoading}
-                        className="rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
-                      >
-                        Restore
-                      </button>
-                      <button
-                        onClick={() =>
-                          handlePermanentDelete(pool.id, pool.type)
-                        }
-                        disabled={isLoading}
-                        className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-                      >
-                        Delete
-                      </button>
+              <div
+                key={pool.id}
+                className="rounded-lg bg-white p-6 shadow transition-shadow hover:shadow-md"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div
+                      className="h-12 w-12 rounded-full"
+                      style={{ backgroundColor: pool.color }}
+                    />
+                    <div>
+                      <h3 className="font-semibold text-gray-900">
+                        {pool.name}
+                      </h3>
+                      <p className="text-sm text-gray-500 capitalize">
+                        {pool.type}
+                      </p>
                     </div>
-                  ) : (
-                    // Active pool actions
-                    pool.type !== "free" && (
-                      <button
-                        onClick={() => handleDeletePool(pool.id, pool.type)}
-                        disabled={isLoading}
-                        className="rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
-                      >
-                        Archive
-                      </button>
-                    )
-                  )}
+                  </div>
+
+                  <div className="flex items-center space-x-4">
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-gray-900">
+                        {currencySymbol}
+                        {getPoolBalance(pool.id).toFixed(2)}
+                      </p>
+                    </div>
+
+                    {showArchived ? (
+                      // Archived pool actions
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleRestorePool(pool.id)}
+                          disabled={isLoading}
+                          className="rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+                        >
+                          Restore
+                        </button>
+                        <button
+                          onClick={() =>
+                            handlePermanentDelete(pool.id, pool.type)
+                          }
+                          disabled={isLoading}
+                          className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    ) : (
+                      // Active pool actions
+                      pool.type !== "free" && (
+                        <button
+                          onClick={() => handleDeletePool(pool.id, pool.type)}
+                          disabled={isLoading}
+                          className="rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+                        >
+                          Archive
+                        </button>
+                      )
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            ))
           )}
         </div>
 
