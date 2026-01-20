@@ -23,7 +23,10 @@ export function Navigation() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
-            <Link href="/" className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-gray-900 via-accent to-gray-900 dark:from-white dark:via-accent dark:to-white bg-clip-text text-transparent transition-all hover:scale-105">
+            <Link
+              href="/"
+              className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-gray-900 via-accent to-gray-900 dark:from-white dark:via-accent dark:to-white bg-clip-text text-transparent transition-all hover:scale-105"
+            >
               Mak Money
             </Link>
           </div>
@@ -54,7 +57,7 @@ export function Navigation() {
             </form>
           </div>
         </div>
-        
+
         {/* Mobile Bottom Navigation */}
         <div className="md:hidden grid grid-cols-4 gap-1 pb-2 pt-2 border-t border-white/10">
           {navItems.map((item) => {

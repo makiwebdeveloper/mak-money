@@ -158,7 +158,10 @@ export default function QuickTransactionModal({
         {type === "expense" && freeBalance >= 0 && (
           <div className="glass mb-4 sm:mb-5 rounded-lg p-2 sm:p-3 border border-accent/20">
             <p className="text-xs text-foreground">
-              Свободные: <span className="font-bold text-accent text-sm">{freeBalance.toFixed(2)}</span>
+              Свободные:{" "}
+              <span className="font-bold text-accent text-sm">
+                {freeBalance.toFixed(2)}
+              </span>
             </p>
           </div>
         )}

@@ -144,8 +144,8 @@ export default function TransactionsClient({
           <button
             onClick={() => setIsCreating((v) => !v)}
             className={`smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-6 py-2 sm:py-2.5 font-semibold whitespace-nowrap text-xs sm:text-sm touch-target ${
-              isCreating 
-                ? "glass hover:shadow-md text-foreground" 
+              isCreating
+                ? "glass hover:shadow-md text-foreground"
                 : "bg-gradient-to-r from-accent to-accent/80 text-white hover:shadow-lg active:scale-95"
             }`}
           >
@@ -156,11 +156,15 @@ export default function TransactionsClient({
         {/* Create Transaction Form */}
         {isCreating && (
           <div className="card-glass mb-8">
-            <h2 className="mb-3 sm:mb-4 text-lg sm:text-2xl font-bold text-foreground">Новая транзакция</h2>
+            <h2 className="mb-3 sm:mb-4 text-lg sm:text-2xl font-bold text-foreground">
+              Новая транзакция
+            </h2>
             <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
               {/* Transaction Type */}
               <div>
-                <label className="mb-2 sm:mb-3 block text-xs sm:text-sm font-semibold text-foreground">Тип</label>
+                <label className="mb-2 sm:mb-3 block text-xs sm:text-sm font-semibold text-foreground">
+                  Тип
+                </label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
@@ -200,7 +204,9 @@ export default function TransactionsClient({
 
               {/* Amount */}
               <div>
-                <label className="mb-2 sm:mb-3 block text-xs sm:text-sm font-semibold text-foreground">Сумма</label>
+                <label className="mb-2 sm:mb-3 block text-xs sm:text-sm font-semibold text-foreground">
+                  Сумма
+                </label>
                 <input
                   type="number"
                   step="0.01"
@@ -228,7 +234,8 @@ export default function TransactionsClient({
                       <option value="">Выберите счет</option>
                       {accounts.map((account) => (
                         <option key={account.id} value={account.id}>
-                          {account.name} ({account.currency} {account.balance.toFixed(2)})
+                          {account.name} ({account.currency}{" "}
+                          {account.balance.toFixed(2)})
                         </option>
                       ))}
                     </select>
@@ -246,7 +253,8 @@ export default function TransactionsClient({
                       <option value="">Выберите счет</option>
                       {accounts.map((account) => (
                         <option key={account.id} value={account.id}>
-                          {account.name} ({account.currency} {account.balance.toFixed(2)})
+                          {account.name} ({account.currency}{" "}
+                          {account.balance.toFixed(2)})
                         </option>
                       ))}
                     </select>
@@ -266,7 +274,8 @@ export default function TransactionsClient({
                     <option value="">Выберите счет</option>
                     {accounts.map((account) => (
                       <option key={account.id} value={account.id}>
-                        {account.name} ({account.currency} {account.balance.toFixed(2)})
+                        {account.name} ({account.currency}{" "}
+                        {account.balance.toFixed(2)})
                       </option>
                     ))}
                   </select>
@@ -315,8 +324,12 @@ export default function TransactionsClient({
 
         {accounts.length === 0 && (
           <div className="glass border-l-4 border-accent rounded-xl p-3 sm:p-4 mb-6">
-            <p className="text-foreground font-semibold text-sm sm:text-base">⚠️ Сначала создайте счет</p>
-            <p className="text-muted-foreground mt-1 text-xs sm:text-sm">Перейдите на страницу счетов, чтобы добавить ваш первый счет.</p>
+            <p className="text-foreground font-semibold text-sm sm:text-base">
+              ⚠️ Сначала создайте счет
+            </p>
+            <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
+              Перейдите на страницу счетов, чтобы добавить ваш первый счет.
+            </p>
           </div>
         )}
 
@@ -350,7 +363,10 @@ export default function TransactionsClient({
                 </thead>
                 <tbody className="divide-y divide-white/10">
                   {transactions.map((transaction) => (
-                    <tr key={transaction.id} className="hover:bg-white/5 smooth-transition">
+                    <tr
+                      key={transaction.id}
+                      className="hover:bg-white/5 smooth-transition"
+                    >
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
                         {formatDate(transaction.transaction_date)}
                       </td>
@@ -358,7 +374,11 @@ export default function TransactionsClient({
                         <span
                           className={`capitalize font-semibold ${getTransactionColor(transaction.type)}`}
                         >
-                          {transaction.type === 'income' ? '✅ Доход' : transaction.type === 'expense' ? '❌ Расход' : '→ Перевод'}
+                          {transaction.type === "income"
+                            ? "✅ Доход"
+                            : transaction.type === "expense"
+                              ? "❌ Расход"
+                              : "→ Перевод"}
                         </span>
                       </td>
                       <td

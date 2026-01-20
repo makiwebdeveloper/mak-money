@@ -66,7 +66,8 @@ export default async function Home() {
             Добро пожаловать, {profile?.name || user.email}
           </h1>
           <p className="text-xs sm:text-lg text-muted-foreground">
-            Основная валюта: <span className="font-semibold text-accent">{currency}</span>
+            Основная валюта:{" "}
+            <span className="font-semibold text-accent">{currency}</span>
           </p>
         </div>
 
@@ -80,10 +81,20 @@ export default async function Home() {
                 Общий баланс
               </div>
               <div className="text-xl sm:text-3xl lg:text-4xl font-bold text-foreground">
-                {totalBalance.toFixed(2)} <span className="text-base sm:text-xl text-accent">{currency}</span>
+                {totalBalance.toFixed(2)}{" "}
+                <span className="text-base sm:text-xl text-accent">
+                  {currency}
+                </span>
               </div>
               <div className="mt-2 sm:mt-4 text-xs text-muted-foreground">
-                {accounts?.length || 0} {accounts?.length === 1 ? "счет" : accounts?.length === 2 || accounts?.length === 3 || accounts?.length === 4 ? "счета" : "счетов"}
+                {accounts?.length || 0}{" "}
+                {accounts?.length === 1
+                  ? "счет"
+                  : accounts?.length === 2 ||
+                      accounts?.length === 3 ||
+                      accounts?.length === 4
+                    ? "счета"
+                    : "счетов"}
               </div>
             </div>
           </div>
@@ -115,7 +126,10 @@ export default async function Home() {
                 {(totalBalance - freeBalance).toFixed(2)}
               </div>
               <div className="mt-3 sm:mt-4 text-xs sm:text-sm text-muted-foreground">
-                {Math.round(((totalBalance - freeBalance) / (totalBalance || 1)) * 100)}% от всего
+                {Math.round(
+                  ((totalBalance - freeBalance) / (totalBalance || 1)) * 100,
+                )}
+                % от всего
               </div>
             </div>
           </div>
@@ -162,7 +176,10 @@ export default async function Home() {
                         {tx.category || "Без категории"}
                       </div>
                       <div className="text-xs sm:text-sm text-muted-foreground truncate">
-                        {tx.accounts?.name} • {new Date(tx.transaction_date).toLocaleDateString("ru-RU")}
+                        {tx.accounts?.name} •{" "}
+                        {new Date(tx.transaction_date).toLocaleDateString(
+                          "ru-RU",
+                        )}
                       </div>
                     </div>
                   </div>

@@ -194,10 +194,7 @@ export default function AccountsClient({
 
         {/* Create Form or Accounts List */}
         {!showArchived && isCreating ? (
-          <form
-            onSubmit={handleCreate}
-            className="card-glass mb-6 sm:mb-8"
-          >
+          <form onSubmit={handleCreate} className="card-glass mb-6 sm:mb-8">
             <h3 className="mb-4 sm:mb-6 text-lg sm:text-2xl font-bold text-foreground">
               Создать счет
             </h3>
@@ -307,17 +304,19 @@ export default function AccountsClient({
                 </div>
               ) : (
                 displayedAccounts.map((account) => (
-                  <div
-                    key={account.id}
-                    className="card-glass p-3 sm:p-4"
-                  >
+                  <div key={account.id} className="card-glass p-3 sm:p-4">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <h3 className="text-base sm:text-lg font-bold text-foreground truncate">
                           {account.name}
                         </h3>
                         <p className="mt-0.5 sm:mt-1 text-xs capitalize text-muted-foreground">
-                          {account.type === 'bank' ? 'Банк' : account.type === 'crypto' ? 'Крипто' : 'Прочее'} • {account.currency}
+                          {account.type === "bank"
+                            ? "Банк"
+                            : account.type === "crypto"
+                              ? "Крипто"
+                              : "Прочее"}{" "}
+                          • {account.currency}
                         </p>
                         <p className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-bold text-accent">
                           {getCurrencySymbol(account.currency)}{" "}
