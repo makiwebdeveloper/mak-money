@@ -139,17 +139,11 @@ export async function DELETE(
 
     if (fetchError) {
       console.error("Error checking account:", fetchError);
-      return NextResponse.json(
-        { error: "Account not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Account not found" }, { status: 404 });
     }
 
     if (!existingAccount) {
-      return NextResponse.json(
-        { error: "Account not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Account not found" }, { status: 404 });
     }
 
     if (permanent) {
@@ -193,7 +187,10 @@ export async function DELETE(
   } catch (error) {
     console.error("Error in account DELETE:", error);
     return NextResponse.json(
-      { error: "Internal server error", details: error instanceof Error ? error.message : "Unknown error" },
+      {
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 },
     );
   }
