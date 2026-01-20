@@ -147,7 +147,38 @@ export async function DELETE(
     }
 
     if (permanent) {
-      // Permanent delete
+      // First, delete all transactions related to this account
+      const { error: deleteTransError } = await supabase
+        .from("transactions")
+        .delete()
+        .or(`account_id.eq.${id},from_account_id.eq.${id},to_account_id.eq.${id}`)
+        .eq("user_id", user.id);
+
+      if (deleteTransError) {
+        console.error("Error deleting transactions:", deleteTransError);
+        return NextResponse.json({ error: deleteTransError.message }, { status: 500 });
+      }
+
+      // Then delete allocations related to this account's pools
+      const { data: pools } = await supabase
+        .from("money_pools")
+        .select("id")
+        .eq("user_id", user.id);
+
+      if (pools && pools.length > 0) {
+        const poolIds = pools.map((p) => p.id);
+        const { error: deleteAllocError } = await supabase
+          .from("allocations")
+          .delete()
+          .in("pool_id", poolIds);
+
+        if (deleteAllocError) {
+          console.error("Error deleting allocations:", deleteAllocError);
+          return NextResponse.json({ error: deleteAllocError.message }, { status: 500 });
+        }
+      }
+
+      // Finally, delete the account
       const { error } = await supabase
         .from("accounts")
         .delete()
