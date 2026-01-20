@@ -1,10 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import QuickTransactionModal from "./quick-transaction-modal";
 
 export default function FloatingActionButton() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Don't show FAB on auth pages
+  if (pathname.startsWith("/auth") || pathname === "/onboarding") {
+    return null;
+  }
 
   return (
     <>
