@@ -8,6 +8,8 @@ export async function POST() {
     provider: "google",
     options: {
       redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/auth/callback`,
+    },
+  });
 
   if (error) {
     console.error("Error signing in with Google:", error);

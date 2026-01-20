@@ -252,89 +252,91 @@ export default function PoolsClient({
               </div>
             ) : (
               displayedPools.map((pool) => (
-              <div key={pool.id} className="card-glass p-4 sm:p-5">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div
-                      className="h-12 sm:h-14 w-12 sm:w-14 rounded-full shadow-lg flex-shrink-0"
-                      style={{ backgroundColor: pool.color }}
-                    />
-                    <div className="min-w-0">
-                      <h3 className="text-base sm:text-lg font-bold text-foreground truncate">
-                        {pool.name}
-                      </h3>
-                      <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm capitalize text-muted-foreground">
-                        {pool.type === "free"
-                          ? "Свободные"
-                          : pool.type === "custom"
-                            ? "Пользовательский"
-                            : pool.type}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between sm:justify-start gap-2 flex-shrink-0">
-                    <div className="text-right sm:text-left">
-                      <p className="text-lg sm:text-2xl font-bold text-accent">
-                        {currencySymbol}
-                        {getPoolBalance(pool.id).toFixed(2)}
-                      </p>
-                    </div>
-
-                    {showArchived ? (
-                      // Archived pool actions
-                      <div className="flex gap-2 sm:gap-3">
-                        <button
-                          onClick={() => handleRestorePool(pool.id)}
-                          disabled={isLoading}
-                          className="smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-lg active:scale-95 touch-target"
-                        >
-                          Восстановить
-                        </button>
-                        <button
-                          onClick={() =>
-                            handlePermanentDelete(pool.id, pool.type)
-                          }
-                          disabled={isLoading}
-                          className="smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs bg-gradient-to-r from-red-500 to-red-600 text-white hover:shadow-lg active:scale-95 touch-target"
-                        >
-                          Удалить
-                        </button>
+                <div key={pool.id} className="card-glass p-4 sm:p-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div
+                        className="h-12 sm:h-14 w-12 sm:w-14 rounded-full shadow-lg flex-shrink-0"
+                        style={{ backgroundColor: pool.color }}
+                      />
+                      <div className="min-w-0">
+                        <h3 className="text-base sm:text-lg font-bold text-foreground truncate">
+                          {pool.name}
+                        </h3>
+                        <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm capitalize text-muted-foreground">
+                          {pool.type === "free"
+                            ? "Свободные"
+                            : pool.type === "custom"
+                              ? "Пользовательский"
+                              : pool.type}
+                        </p>
                       </div>
-                    ) : (
-                      // Active pool actions
-                      <div className="flex gap-2 sm:gap-3">
-                        {/* Кнопка управления распределением - только для не-free пулов */}
-                        {pool.type !== "free" && (
+                    </div>
+
+                    <div className="flex items-center justify-between sm:justify-start gap-2 flex-shrink-0">
+                      <div className="text-right sm:text-left">
+                        <p className="text-lg sm:text-2xl font-bold text-accent">
+                          {currencySymbol}
+                          {getPoolBalance(pool.id).toFixed(2)}
+                        </p>
+                      </div>
+
+                      {showArchived ? (
+                        // Archived pool actions
+                        <div className="flex gap-2 sm:gap-3">
+                          <button
+                            onClick={() => handleRestorePool(pool.id)}
+                            disabled={isLoading}
+                            className="smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-lg active:scale-95 touch-target"
+                          >
+                            Восстановить
+                          </button>
                           <button
                             onClick={() =>
-                              setEditingPool({
-                                id: pool.id,
-                                name: pool.name,
-                                amount: getPoolBalance(pool.id),
-                              })
+                              handlePermanentDelete(pool.id, pool.type)
                             }
                             disabled={isLoading}
-                            className="smooth-transition rounded-xl px-3 sm:px-6 py-2.5 sm:py-3 font-semibold text-xs sm:text-sm bg-gradient-to-r from-accent to-accent/80 text-white hover:shadow-lg active:scale-95 touch-target"
+                            className="smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs bg-gradient-to-r from-red-500 to-red-600 text-white hover:shadow-lg active:scale-95 touch-target"
                           >
-                            Распределить
+                            Удалить
                           </button>
-                        )}
-                        {pool.type !== "free" && (
-                          <button
-                            onClick={() => handleDeletePool(pool.id, pool.type)}
-                            disabled={isLoading}
-                            className="smooth-transition rounded-xl px-3 sm:px-6 py-2.5 sm:py-3 font-semibold text-xs sm:text-sm glass hover:shadow-md text-foreground touch-target"
-                          >
-                            Архив
-                          </button>
-                        )}
-                      </div>
-                    )}
+                        </div>
+                      ) : (
+                        // Active pool actions
+                        <div className="flex gap-2 sm:gap-3">
+                          {/* Кнопка управления распределением - только для не-free пулов */}
+                          {pool.type !== "free" && (
+                            <button
+                              onClick={() =>
+                                setEditingPool({
+                                  id: pool.id,
+                                  name: pool.name,
+                                  amount: getPoolBalance(pool.id),
+                                })
+                              }
+                              disabled={isLoading}
+                              className="smooth-transition rounded-xl px-3 sm:px-6 py-2.5 sm:py-3 font-semibold text-xs sm:text-sm bg-gradient-to-r from-accent to-accent/80 text-white hover:shadow-lg active:scale-95 touch-target"
+                            >
+                              Распределить
+                            </button>
+                          )}
+                          {pool.type !== "free" && (
+                            <button
+                              onClick={() =>
+                                handleDeletePool(pool.id, pool.type)
+                              }
+                              disabled={isLoading}
+                              className="smooth-transition rounded-xl px-3 sm:px-6 py-2.5 sm:py-3 font-semibold text-xs sm:text-sm glass hover:shadow-md text-foreground touch-target"
+                            >
+                              Архив
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              ))
             )}
           </div>
         )}

@@ -309,59 +309,59 @@ export default function AccountsClient({
                   </div>
                 ) : (
                   displayedAccounts.map((account) => (
-                  <div key={account.id} className="card-glass p-3 sm:p-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-base sm:text-lg font-bold text-foreground truncate">
-                          {account.name}
-                        </h3>
-                        <p className="mt-0.5 sm:mt-1 text-xs capitalize text-muted-foreground">
-                          {account.type === "bank"
-                            ? "Банк"
-                            : account.type === "crypto"
-                              ? "Крипто"
-                              : "Прочее"}{" "}
-                          • {account.currency}
-                        </p>
-                        <p className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-bold text-accent">
-                          {getCurrencySymbol(account.currency)}{" "}
-                          {account.balance.toLocaleString("en-US", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </p>
-                      </div>
-                      {showArchived ? (
-                        // Archived account actions
-                        <div className="flex gap-2 flex-shrink-0">
-                          <button
-                            onClick={() => handleRestore(account.id)}
-                            disabled={loading}
-                            className="smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-lg active:scale-95 touch-target"
-                          >
-                            Восстановить
-                          </button>
-                          <button
-                            onClick={() => handlePermanentDelete(account.id)}
-                            disabled={loading}
-                            className="smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs bg-gradient-to-r from-red-500 to-red-600 text-white hover:shadow-lg active:scale-95 touch-target"
-                          >
-                            Удалить
-                          </button>
+                    <div key={account.id} className="card-glass p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-base sm:text-lg font-bold text-foreground truncate">
+                            {account.name}
+                          </h3>
+                          <p className="mt-0.5 sm:mt-1 text-xs capitalize text-muted-foreground">
+                            {account.type === "bank"
+                              ? "Банк"
+                              : account.type === "crypto"
+                                ? "Крипто"
+                                : "Прочее"}{" "}
+                            • {account.currency}
+                          </p>
+                          <p className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-bold text-accent">
+                            {getCurrencySymbol(account.currency)}{" "}
+                            {account.balance.toLocaleString("en-US", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </p>
                         </div>
-                      ) : (
-                        // Active account actions
-                        <button
-                          onClick={() => handleArchive(account.id)}
-                          disabled={loading}
-                          className="smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs glass hover:shadow-md text-foreground flex-shrink-0 touch-target"
-                        >
-                          Архивировать
-                        </button>
-                      )}
+                        {showArchived ? (
+                          // Archived account actions
+                          <div className="flex gap-2 flex-shrink-0">
+                            <button
+                              onClick={() => handleRestore(account.id)}
+                              disabled={loading}
+                              className="smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-lg active:scale-95 touch-target"
+                            >
+                              Восстановить
+                            </button>
+                            <button
+                              onClick={() => handlePermanentDelete(account.id)}
+                              disabled={loading}
+                              className="smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs bg-gradient-to-r from-red-500 to-red-600 text-white hover:shadow-lg active:scale-95 touch-target"
+                            >
+                              Удалить
+                            </button>
+                          </div>
+                        ) : (
+                          // Active account actions
+                          <button
+                            onClick={() => handleArchive(account.id)}
+                            disabled={loading}
+                            className="smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs glass hover:shadow-md text-foreground flex-shrink-0 touch-target"
+                          >
+                            Архивировать
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))
                 )}
               </div>
             )}
