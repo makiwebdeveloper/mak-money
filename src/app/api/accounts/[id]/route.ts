@@ -151,12 +151,17 @@ export async function DELETE(
       const { error: deleteTransError } = await supabase
         .from("transactions")
         .delete()
-        .or(`account_id.eq.${id},from_account_id.eq.${id},to_account_id.eq.${id}`)
+        .or(
+          `account_id.eq.${id},from_account_id.eq.${id},to_account_id.eq.${id}`,
+        )
         .eq("user_id", user.id);
 
       if (deleteTransError) {
         console.error("Error deleting transactions:", deleteTransError);
-        return NextResponse.json({ error: deleteTransError.message }, { status: 500 });
+        return NextResponse.json(
+          { error: deleteTransError.message },
+          { status: 500 },
+        );
       }
 
       // Then delete allocations related to this account's pools
@@ -174,7 +179,10 @@ export async function DELETE(
 
         if (deleteAllocError) {
           console.error("Error deleting allocations:", deleteAllocError);
-          return NextResponse.json({ error: deleteAllocError.message }, { status: 500 });
+          return NextResponse.json(
+            { error: deleteAllocError.message },
+            { status: 500 },
+          );
         }
       }
 
