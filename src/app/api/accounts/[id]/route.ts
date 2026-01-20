@@ -129,6 +129,29 @@ export async function DELETE(
     const { searchParams } = new URL(request.url);
     const permanent = searchParams.get("permanent") === "true";
 
+    // First, verify account exists and belongs to user
+    const { data: existingAccount, error: fetchError } = await supabase
+      .from("accounts")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (fetchError) {
+      console.error("Error checking account:", fetchError);
+      return NextResponse.json(
+        { error: "Account not found" },
+        { status: 404 },
+      );
+    }
+
+    if (!existingAccount) {
+      return NextResponse.json(
+        { error: "Account not found" },
+        { status: 404 },
+      );
+    }
+
     if (permanent) {
       // Permanent delete
       const { error } = await supabase
@@ -170,7 +193,7 @@ export async function DELETE(
   } catch (error) {
     console.error("Error in account DELETE:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Internal server error", details: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 },
     );
   }
