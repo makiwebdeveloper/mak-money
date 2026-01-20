@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Database } from "@/lib/types/database";
 import { CURRENCIES, CurrencyCode } from "@/lib/constants/currencies";
-import { buttonStyles, inputStyles } from "@/lib/styles/components";
 
 type Account = Database["public"]["Tables"]["accounts"]["Row"];
 type AccountType = Database["public"]["Tables"]["accounts"]["Row"]["type"];
@@ -157,31 +156,39 @@ export default function AccountsClient({
   const displayedAccounts = showArchived ? archivedAccounts : activeAccounts;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background to-background/95 p-3 sm:p-4 md:p-6 pt-32 md:pt-0 pb-24 md:pb-0">
       <div className="mx-auto max-w-4xl">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Accounts</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Manage your bank accounts and balances
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-foreground via-accent to-foreground bg-clip-text text-transparent mb-1 sm:mb-2">
+            Счета
+          </h1>
+          <p className="text-xs sm:text-base text-muted-foreground">
+            Управление банковскими счетами
           </p>
         </div>
 
         {/* Toggle between Active and Archived */}
-        <div className="mb-6 flex space-x-2">
+        <div className="mb-4 sm:mb-6 flex gap-2">
           <button
             onClick={() => setShowArchived(false)}
-            className={
-              !showArchived ? buttonStyles.primary : buttonStyles.ghost
-            }
+            className={`smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-6 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm touch-target ${
+              !showArchived
+                ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-md sm:shadow-lg"
+                : "glass hover:shadow-md"
+            }`}
           >
-            Active ({activeAccounts.length})
+            Активные ({activeAccounts.length})
           </button>
           <button
             onClick={() => setShowArchived(true)}
-            className={showArchived ? buttonStyles.primary : buttonStyles.ghost}
+            className={`smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-6 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm touch-target ${
+              showArchived
+                ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-md sm:shadow-lg"
+                : "glass hover:shadow-md"
+            }`}
           >
-            Archived ({archivedAccounts.length})
+            Архивированные ({archivedAccounts.length})
           </button>
         </div>
 
@@ -189,15 +196,15 @@ export default function AccountsClient({
         {!showArchived && isCreating ? (
           <form
             onSubmit={handleCreate}
-            className="mb-6 rounded-lg bg-white p-6 shadow"
+            className="card-glass mb-6 sm:mb-8"
           >
-            <h3 className="mb-4 font-semibold text-gray-900">
-              Create New Account
+            <h3 className="mb-4 sm:mb-6 text-lg sm:text-2xl font-bold text-foreground">
+              Создать счет
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Name
+                <label className="mb-1.5 sm:mb-2 block text-xs font-semibold text-foreground">
+                  Имя
                 </label>
                 <input
                   type="text"
@@ -205,15 +212,15 @@ export default function AccountsClient({
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
-                  placeholder="e.g., Main Card, Savings Account"
-                  className={inputStyles.base}
+                  placeholder="Например, Основная карта"
+                  className="glass-sm mobile-input w-full rounded-lg sm:rounded-xl px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
                   required
                   autoFocus
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Type
+                <label className="mb-1.5 sm:mb-2 block text-xs font-semibold text-foreground">
+                  Тип
                 </label>
                 <select
                   value={formData.type}
@@ -223,16 +230,16 @@ export default function AccountsClient({
                       type: e.target.value as AccountType,
                     })
                   }
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                  className="glass-sm mobile-input w-full rounded-lg sm:rounded-xl px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
                 >
-                  <option value="bank">Bank</option>
-                  <option value="crypto">Crypto</option>
-                  <option value="other">Other</option>
+                  <option value="bank">Банк</option>
+                  <option value="crypto">Крипто</option>
+                  <option value="other">Прочее</option>
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Currency
+                <label className="mb-1.5 sm:mb-2 block text-xs font-semibold text-foreground">
+                  Валюта
                 </label>
                 <select
                   value={formData.currency}
@@ -242,7 +249,7 @@ export default function AccountsClient({
                       currency: e.target.value as CurrencyCode,
                     })
                   }
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                  className="glass-sm mobile-input w-full rounded-lg sm:rounded-xl px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
                 >
                   {CURRENCIES.map((currency) => (
                     <option key={currency.code} value={currency.code}>
@@ -252,8 +259,8 @@ export default function AccountsClient({
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Initial Balance
+                <label className="mb-1.5 sm:mb-2 block text-xs font-semibold text-foreground">
+                  Начальный баланс
                 </label>
                 <input
                   type="number"
@@ -265,54 +272,54 @@ export default function AccountsClient({
                       balance: parseFloat(e.target.value) || 0,
                     })
                   }
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                  className="glass-sm mobile-input w-full rounded-lg sm:rounded-xl px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
                 />
               </div>
             </div>
-            <div className="mt-4 flex space-x-3">
+            <div className="mt-4 sm:mt-5 flex gap-2">
               <button
                 type="submit"
-                className="flex-1 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1 smooth-transition rounded-lg sm:rounded-xl bg-gradient-to-r from-accent to-accent/80 px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm text-white hover:shadow-lg active:scale-95 disabled:opacity-50 touch-target"
                 disabled={loading}
               >
-                {loading ? "Creating..." : "Create"}
+                {loading ? "Создание..." : "Создать"}
               </button>
               <button
                 type="button"
                 onClick={() => setIsCreating(false)}
-                className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                className="flex-1 smooth-transition rounded-lg sm:rounded-xl glass hover:shadow-md text-foreground font-semibold text-xs sm:text-sm touch-target"
               >
-                Cancel
+                Отмена
               </button>
             </div>
           </form>
         ) : (
           <>
             {/* Accounts List */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               {displayedAccounts.length === 0 ? (
-                <div className="rounded-lg bg-white p-12 text-center shadow">
-                  <p className="text-gray-500">
+                <div className="card-glass text-center py-16">
+                  <p className="text-lg text-muted-foreground">
                     {showArchived
-                      ? "No archived accounts"
-                      : "No accounts yet. Create your first account."}
+                      ? "Нет архивированных счетов"
+                      : "Нет счетов. Создайте свой первый счет."}
                   </p>
                 </div>
               ) : (
                 displayedAccounts.map((account) => (
                   <div
                     key={account.id}
-                    className="rounded-lg bg-white p-6 shadow transition-shadow hover:shadow-md"
+                    className="card-glass p-3 sm:p-4"
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold text-gray-900">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-base sm:text-lg font-bold text-foreground truncate">
                           {account.name}
                         </h3>
-                        <p className="mt-1 text-sm capitalize text-gray-500">
-                          {account.type} • {account.currency}
+                        <p className="mt-0.5 sm:mt-1 text-xs capitalize text-muted-foreground">
+                          {account.type === 'bank' ? 'Банк' : account.type === 'crypto' ? 'Крипто' : 'Прочее'} • {account.currency}
                         </p>
-                        <p className="mt-2 text-2xl font-bold text-gray-900">
+                        <p className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-bold text-accent">
                           {getCurrencySymbol(account.currency)}{" "}
                           {account.balance.toLocaleString("en-US", {
                             minimumFractionDigits: 2,
@@ -322,20 +329,20 @@ export default function AccountsClient({
                       </div>
                       {showArchived ? (
                         // Archived account actions
-                        <div className="flex space-x-2">
+                        <div className="flex gap-2 flex-shrink-0">
                           <button
                             onClick={() => handleRestore(account.id)}
                             disabled={loading}
-                            className={buttonStyles.success}
+                            className="smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-lg active:scale-95 touch-target"
                           >
-                            Restore
+                            Восстановить
                           </button>
                           <button
                             onClick={() => handlePermanentDelete(account.id)}
                             disabled={loading}
-                            className={buttonStyles.danger}
+                            className="smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs bg-gradient-to-r from-red-500 to-red-600 text-white hover:shadow-lg active:scale-95 touch-target"
                           >
-                            Delete
+                            Удалить
                           </button>
                         </div>
                       ) : (
@@ -343,9 +350,9 @@ export default function AccountsClient({
                         <button
                           onClick={() => handleArchive(account.id)}
                           disabled={loading}
-                          className={buttonStyles.dangerSmall}
+                          className="smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs glass hover:shadow-md text-foreground flex-shrink-0 touch-target"
                         >
-                          Archive
+                          Архивировать
                         </button>
                       )}
                     </div>
@@ -354,14 +361,14 @@ export default function AccountsClient({
               )}
             </div>
 
-            {/* Create New Account Button - only show when viewing active accounts */}
+            {/* Create New Account Button */}
             {!showArchived && (
-              <div className="mt-6">
+              <div className="mt-6 sm:mt-8">
                 <button
                   onClick={() => setIsCreating(true)}
-                  className={buttonStyles.primary}
+                  className="w-full smooth-transition rounded-lg sm:rounded-xl bg-gradient-to-r from-accent to-accent/80 px-3 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-semibold text-white hover:shadow-lg active:scale-95 touch-target"
                 >
-                  + Create New Account
+                  Создать счет
                 </button>
               </div>
             )}

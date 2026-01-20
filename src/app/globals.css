@@ -50,9 +50,9 @@
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
+  --card: oklch(1 0 0 / 95%);
   --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
+  --popover: oklch(1 0 0 / 95%);
   --popover-foreground: oklch(0.145 0 0);
   --primary: oklch(0.205 0 0);
   --primary-foreground: oklch(0.985 0 0);
@@ -60,8 +60,8 @@
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --accent: #4a6d7e;
+  --accent-foreground: oklch(1 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
@@ -75,8 +75,8 @@
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-accent: #4a6d7e;
+  --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 }
@@ -84,9 +84,9 @@
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
+  --card: oklch(0.205 0 0 / 85%);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+  --popover: oklch(0.205 0 0 / 85%);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
@@ -94,7 +94,7 @@
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
+  --accent: #4a6d7e;
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
@@ -105,11 +105,11 @@
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
+  --sidebar: oklch(0.205 0 0 / 90%);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent: #4a6d7e;
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
@@ -121,5 +121,117 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Glassmorphism and modern UI effects */
+@layer components {
+  /* Glass effect for cards */
+  .glass {
+    @apply bg-white/75 dark:bg-white/8 backdrop-blur-xl border border-white/40 dark:border-white/15 shadow-sm;
+  }
+
+  .glass-sm {
+    @apply bg-white/60 dark:bg-white/5 backdrop-blur-lg border border-white/30 dark:border-white/10 shadow-xs;
+  }
+
+  .glass-lg {
+    @apply bg-white/80 dark:bg-white/12 backdrop-blur-2xl border border-white/50 dark:border-white/20 shadow-xl;
+  }
+
+  /* Card with subtle shadow and blur */
+  .card-glass {
+    @apply bg-white/75 dark:bg-white/8 backdrop-blur-xl border border-white/40 dark:border-white/15 shadow-sm rounded-2xl p-6 transition-all duration-300 hover:shadow-lg hover:bg-white/85 dark:hover:bg-white/12;
+  }
+
+  /* Backdrop blur for modals - premium glassmorphism */
+  .backdrop-blur-modal {
+    @apply fixed inset-0 bg-black/30 dark:bg-black/40 backdrop-blur-lg transition-all duration-500;
+  }
+
+  /* Primary button - clean and premium */
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg sm:rounded-xl px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm text-white bg-linear-to-r from-primary to-primary/80 shadow-md sm:shadow-lg hover:shadow-lg sm:hover:shadow-xl transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Secondary button - clean glass */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-lg sm:rounded-xl px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm text-foreground bg-white/50 dark:bg-white/8 backdrop-blur-md border border-white/40 dark:border-white/15 hover:shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50;
+  }
+
+  /* Accent button */
+  .btn-accent {
+    @apply inline-flex items-center justify-center rounded-lg sm:rounded-xl px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm text-white bg-linear-to-r from-accent to-accent/80 shadow-md sm:shadow-lg hover:shadow-lg sm:hover:shadow-xl transition-all duration-300 active:scale-95 disabled:opacity-50;
+  }
+
+  /* Success button */
+  .btn-success {
+    @apply inline-flex items-center justify-center rounded-lg sm:rounded-xl px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm text-white bg-linear-to-r from-green-500 to-green-600 shadow-md sm:shadow-lg hover:shadow-lg sm:hover:shadow-xl transition-all duration-300 active:scale-95 disabled:opacity-50;
+  }
+
+  /* Danger button */
+  .btn-danger {
+    @apply inline-flex items-center justify-center rounded-lg sm:rounded-xl px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm text-white bg-linear-to-r from-red-500 to-red-600 shadow-md sm:shadow-lg hover:shadow-lg sm:hover:shadow-xl transition-all duration-300 active:scale-95 disabled:opacity-50;
+  }
+
+  /* Ghost button */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center rounded-lg sm:rounded-xl px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm text-foreground hover:bg-white/20 dark:hover:bg-white/10 transition-all duration-300 active:scale-95;
+  }
+
+  /* Smooth transitions */
+  .smooth-transition {
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  /* Modal animation */
+  @keyframes modalSlideIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  .modal-animate {
+    animation: modalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Accent color highlights */
+  .accent-highlight {
+    @apply text-accent font-semibold;
+  }
+
+  /* Subtle border for separation */
+  .border-subtle {
+    @apply border border-white/30 dark:border-white/10;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-linear-to-r from-primary via-accent to-primary bg-clip-text text-transparent;
+  }
+
+  /* Hover lift effect */
+  .hover-lift {
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  }
+
+  /* Focus ring with blur */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-accent/50 focus:ring-offset-2 dark:focus:ring-offset-primary;
+  }
+
+  /* Touch target - minimum 44x44 for iOS */
+  .touch-target {
+    @apply min-h-11 sm:min-h-10;
+  }
+
+  /* Mobile optimized input */
+  .mobile-input {
+    @apply text-base sm:text-sm; /* Prevent zoom on mobile */
   }
 }

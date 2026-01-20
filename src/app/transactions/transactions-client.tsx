@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Database } from "@/lib/types/database";
-import { buttonStyles, inputStyles } from "@/lib/styles/components";
 
 type Transaction = Database["public"]["Tables"]["transactions"]["Row"];
 type Account = Database["public"]["Tables"]["accounts"]["Row"];
@@ -119,91 +118,95 @@ export default function TransactionsClient({
   const getTransactionColor = (type: string) => {
     switch (type) {
       case "income":
-        return "text-green-600";
+        return "text-green-600 dark:text-green-400";
       case "expense":
-        return "text-red-600";
+        return "text-red-600 dark:text-red-400";
       case "transfer":
-        return "text-blue-600";
+        return "text-accent";
       default:
-        return "text-gray-600";
+        return "text-foreground";
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background to-background/95 p-3 sm:p-4 md:p-6 pt-32 md:pt-0 pb-24 md:pb-0">
       <div className="mx-auto max-w-4xl">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Transactions</h1>
-            <p className="mt-2 text-sm text-gray-600">
-              View and add your transactions
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-foreground via-accent to-foreground bg-clip-text text-transparent mb-1 sm:mb-2">
+              Транзакции
+            </h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Просмотр и добавление операций
             </p>
           </div>
           <button
             onClick={() => setIsCreating((v) => !v)}
-            className={
-              isCreating ? buttonStyles.secondary : buttonStyles.primary
-            }
+            className={`smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-6 py-2 sm:py-2.5 font-semibold whitespace-nowrap text-xs sm:text-sm touch-target ${
+              isCreating 
+                ? "glass hover:shadow-md text-foreground" 
+                : "bg-gradient-to-r from-accent to-accent/80 text-white hover:shadow-lg active:scale-95"
+            }`}
           >
-            {isCreating ? "Cancel" : "+ New Transaction"}
+            {isCreating ? "Отмена" : "Новая транзакция"}
           </button>
         </div>
 
         {/* Create Transaction Form */}
         {isCreating && (
-          <div className="mb-8 rounded-lg border bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-xl font-semibold">New Transaction</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="card-glass mb-8">
+            <h2 className="mb-3 sm:mb-4 text-lg sm:text-2xl font-bold text-foreground">Новая транзакция</h2>
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
               {/* Transaction Type */}
               <div>
-                <label className="mb-2 block text-sm font-medium">Type</label>
-                <div className="flex gap-2">
+                <label className="mb-2 sm:mb-3 block text-xs sm:text-sm font-semibold text-foreground">Тип</label>
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setType("income")}
-                    className={
+                    className={`smooth-transition rounded-lg sm:rounded-xl px-3 py-2 sm:py-2.5 font-semibold text-xs touch-target ${
                       type === "income"
-                        ? buttonStyles.success
-                        : buttonStyles.secondary
-                    }
+                        ? "bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30"
+                        : "glass hover:shadow-md"
+                    }`}
                   >
-                    Income
+                    Доход
                   </button>
                   <button
                     type="button"
                     onClick={() => setType("expense")}
-                    className={
+                    className={`smooth-transition rounded-lg sm:rounded-xl px-3 py-2 sm:py-2.5 font-semibold text-xs touch-target ${
                       type === "expense"
-                        ? buttonStyles.danger
-                        : buttonStyles.secondary
-                    }
+                        ? "bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30"
+                        : "glass hover:shadow-md"
+                    }`}
                   >
-                    Expense
+                    Расход
                   </button>
                   <button
                     type="button"
                     onClick={() => setType("transfer")}
-                    className={
+                    className={`smooth-transition rounded-lg sm:rounded-xl px-3 py-2 sm:py-2.5 font-semibold text-xs touch-target ${
                       type === "transfer"
-                        ? buttonStyles.primary
-                        : buttonStyles.secondary
-                    }
+                        ? "bg-gradient-to-br from-accent to-accent/80 text-white shadow-lg shadow-accent/30"
+                        : "glass hover:shadow-md"
+                    }`}
                   >
-                    Transfer
+                    Перевод
                   </button>
                 </div>
               </div>
 
               {/* Amount */}
               <div>
-                <label className="mb-2 block text-sm font-medium">Amount</label>
+                <label className="mb-2 sm:mb-3 block text-xs sm:text-sm font-semibold text-foreground">Сумма</label>
                 <input
                   type="number"
                   step="0.01"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className={inputStyles.base}
+                  className="glass-sm mobile-input w-full rounded-lg sm:rounded-xl px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
                   placeholder="0.00"
                   required
                 />
@@ -213,39 +216,37 @@ export default function TransactionsClient({
               {type === "transfer" ? (
                 <>
                   <div>
-                    <label className="mb-2 block text-sm font-medium">
-                      From Account
+                    <label className="mb-2 sm:mb-3 block text-xs sm:text-sm font-semibold text-foreground">
+                      Со счета
                     </label>
                     <select
                       value={fromAccountId}
                       onChange={(e) => setFromAccountId(e.target.value)}
-                      className={inputStyles.base}
+                      className="glass-sm mobile-input w-full rounded-lg sm:rounded-xl px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
                       required
                     >
-                      <option value="">Select account</option>
+                      <option value="">Выберите счет</option>
                       {accounts.map((account) => (
                         <option key={account.id} value={account.id}>
-                          {account.name} ({account.currency}{" "}
-                          {account.balance.toFixed(2)})
+                          {account.name} ({account.currency} {account.balance.toFixed(2)})
                         </option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm font-medium">
-                      To Account
+                    <label className="mb-2 sm:mb-3 block text-xs sm:text-sm font-semibold text-foreground">
+                      На счет
                     </label>
                     <select
                       value={toAccountId}
                       onChange={(e) => setToAccountId(e.target.value)}
-                      className={inputStyles.base}
+                      className="glass-sm mobile-input w-full rounded-lg sm:rounded-xl px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
                       required
                     >
-                      <option value="">Select account</option>
+                      <option value="">Выберите счет</option>
                       {accounts.map((account) => (
                         <option key={account.id} value={account.id}>
-                          {account.name} ({account.currency}{" "}
-                          {account.balance.toFixed(2)})
+                          {account.name} ({account.currency} {account.balance.toFixed(2)})
                         </option>
                       ))}
                     </select>
@@ -253,20 +254,19 @@ export default function TransactionsClient({
                 </>
               ) : (
                 <div>
-                  <label className="mb-2 block text-sm font-medium">
-                    Account
+                  <label className="mb-2 sm:mb-3 block text-xs sm:text-sm font-semibold text-foreground">
+                    Счет
                   </label>
                   <select
                     value={accountId}
                     onChange={(e) => setAccountId(e.target.value)}
-                    className={inputStyles.base}
+                    className="glass-sm mobile-input w-full rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
                     required
                   >
-                    <option value="">Select account</option>
+                    <option value="">Выберите счет</option>
                     {accounts.map((account) => (
                       <option key={account.id} value={account.id}>
-                        {account.name} ({account.currency}{" "}
-                        {account.balance.toFixed(2)})
+                        {account.name} ({account.currency} {account.balance.toFixed(2)})
                       </option>
                     ))}
                   </select>
@@ -275,29 +275,29 @@ export default function TransactionsClient({
 
               {/* Category (optional) */}
               <div>
-                <label className="mb-2 block text-sm font-medium">
-                  Category (optional)
+                <label className="mb-2 sm:mb-3 block text-xs sm:text-sm font-semibold text-foreground">
+                  Категория
                 </label>
                 <input
                   type="text"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className={inputStyles.base}
-                  placeholder="e.g., Salary, Groceries, etc."
+                  className="glass-sm mobile-input w-full rounded-xl px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
+                  placeholder="Зарплата, Продукты..."
                 />
               </div>
 
               {/* Description (optional) */}
               <div>
-                <label className="mb-2 block text-sm font-medium">
-                  Description (optional)
+                <label className="mb-2 sm:mb-3 block text-xs sm:text-sm font-semibold text-foreground">
+                  Описание
                 </label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className={inputStyles.base}
-                  placeholder="Add notes..."
-                  rows={3}
+                  className="glass-sm mobile-input w-full rounded-xl px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
+                  placeholder="Добавьте заметки..."
+                  rows={2}
                 ></textarea>
               </div>
 
@@ -305,76 +305,79 @@ export default function TransactionsClient({
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`w-full ${buttonStyles.primary}`}
+                className="w-full smooth-transition rounded-xl bg-gradient-to-r from-accent to-accent/80 px-4 py-2.5 sm:py-3 font-semibold text-sm sm:text-base text-white hover:shadow-lg active:scale-95 disabled:opacity-50 touch-target"
               >
-                {isLoading ? "Creating..." : "Create Transaction"}
+                {isLoading ? "Создание..." : "Создать транзакцию"}
               </button>
             </form>
           </div>
         )}
 
         {accounts.length === 0 && (
-          <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-yellow-800">
-            You need to create an account first before adding transactions.
+          <div className="glass border-l-4 border-accent rounded-xl p-3 sm:p-4 mb-6">
+            <p className="text-foreground font-semibold text-sm sm:text-base">⚠️ Сначала создайте счет</p>
+            <p className="text-muted-foreground mt-1 text-xs sm:text-sm">Перейдите на страницу счетов, чтобы добавить ваш первый счет.</p>
           </div>
         )}
 
         {/* Transactions List */}
         {transactions.length === 0 ? (
-          <div className="py-12 text-center text-gray-500">
-            No transactions yet
+          <div className="card-glass py-12 sm:py-16 text-center text-xs sm:text-base text-muted-foreground">
+            Транзакций еще нет
           </div>
         ) : (
-          <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                    Amount
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                    Category
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                    Description
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {transactions.map((transaction) => (
-                  <tr key={transaction.id} className="hover:bg-gray-50">
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
-                      {formatDate(transaction.transaction_date)}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm">
-                      <span
-                        className={`capitalize ${getTransactionColor(transaction.type)}`}
-                      >
-                        {transaction.type}
-                      </span>
-                    </td>
-                    <td
-                      className={`whitespace-nowrap px-6 py-4 text-sm font-medium ${getTransactionColor(transaction.type)}`}
-                    >
-                      {getTransactionSign(transaction.type)}
-                      {transaction.amount} {transaction.currency}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                      {transaction.category || "-"}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {transaction.description || "-"}
-                    </td>
+          <div className="card-glass overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gradient-to-r from-primary/10 to-accent/10 border-b border-white/20">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase text-foreground">
+                      Дата
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase text-foreground">
+                      Тип
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase text-foreground">
+                      Сумма
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase text-foreground">
+                      Категория
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase text-foreground">
+                      Описание
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-white/10">
+                  {transactions.map((transaction) => (
+                    <tr key={transaction.id} className="hover:bg-white/5 smooth-transition">
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
+                        {formatDate(transaction.transaction_date)}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm">
+                        <span
+                          className={`capitalize font-semibold ${getTransactionColor(transaction.type)}`}
+                        >
+                          {transaction.type === 'income' ? '✅ Доход' : transaction.type === 'expense' ? '❌ Расход' : '→ Перевод'}
+                        </span>
+                      </td>
+                      <td
+                        className={`whitespace-nowrap px-6 py-4 text-sm font-bold ${getTransactionColor(transaction.type)}`}
+                      >
+                        {getTransactionSign(transaction.type)}
+                        {transaction.amount} {transaction.currency}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
+                        {transaction.category || "-"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground">
+                        {transaction.description || "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

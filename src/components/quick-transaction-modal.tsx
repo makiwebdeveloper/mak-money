@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Database } from "@/lib/types/database";
-import { buttonStyles, inputStyles } from "@/lib/styles/components";
 
 type Account = Database["public"]["Tables"]["accounts"]["Row"];
 
@@ -125,23 +124,23 @@ export default function QuickTransactionModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+      className="backdrop-blur-modal fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
+        className="glass-lg w-full sm:max-w-md rounded-2xl sm:rounded-2xl p-4 sm:p-8 shadow-2xl modal-animate max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">
+        <div className="mb-4 sm:mb-6 flex items-center justify-between gap-2">
+          <h2 className="text-lg sm:text-2xl font-bold bg-linear-to-r from-foreground to-accent bg-clip-text text-transparent">
             Быстрая транзакция
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="smooth-transition rounded-lg p-1 text-foreground hover:bg-white/30 dark:hover:bg-white/10 flex-shrink-0"
           >
             <svg
-              className="h-6 w-6"
+              className="h-5 w-5 sm:h-6 sm:w-6"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -157,41 +156,41 @@ export default function QuickTransactionModal({
         </div>
 
         {type === "expense" && freeBalance >= 0 && (
-          <div className="mb-4 rounded-lg bg-blue-50 p-3">
-            <p className="text-sm text-blue-800">
-              💰 Свободные средства: <strong>{freeBalance.toFixed(2)}</strong>
+          <div className="glass mb-4 sm:mb-5 rounded-lg p-2 sm:p-3 border border-accent/20">
+            <p className="text-xs text-foreground">
+              Свободные: <span className="font-bold text-accent text-sm">{freeBalance.toFixed(2)}</span>
             </p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
           {/* Тип транзакции */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
+            <label className="mb-2 block text-xs font-semibold text-foreground">
               Тип
             </label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setType("income")}
-                className={`rounded-lg px-4 py-2 font-medium transition ${
+                className={`smooth-transition rounded-lg px-2 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm ${
                   type === "income"
-                    ? "bg-green-500 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30"
+                    : "glass hover:shadow-md"
                 }`}
               >
-                ✅ Доход
+                Доход
               </button>
               <button
                 type="button"
                 onClick={() => setType("expense")}
-                className={`rounded-lg px-4 py-2 font-medium transition ${
+                className={`smooth-transition rounded-lg px-2 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm ${
                   type === "expense"
-                    ? "bg-red-500 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30"
+                    : "glass hover:shadow-md"
                 }`}
               >
-                ❌ Расход
+                Расход
               </button>
             </div>
           </div>
@@ -200,7 +199,7 @@ export default function QuickTransactionModal({
           <div>
             <label
               htmlFor="amount"
-              className="mb-2 block text-sm font-medium text-gray-700"
+              className="mb-1.5 block text-xs font-semibold text-foreground"
             >
               Сумма *
             </label>
@@ -210,7 +209,7 @@ export default function QuickTransactionModal({
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className={inputStyles.base}
+              className="glass-sm mobile-input w-full rounded-lg px-3 py-2 sm:py-2.5 text-sm sm:text-base text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
               placeholder="0.00"
               required
             />
@@ -220,7 +219,7 @@ export default function QuickTransactionModal({
           <div>
             <label
               htmlFor="account"
-              className="mb-2 block text-sm font-medium text-gray-700"
+              className="mb-1.5 block text-xs font-semibold text-foreground"
             >
               Счет *
             </label>
@@ -228,7 +227,7 @@ export default function QuickTransactionModal({
               id="account"
               value={accountId}
               onChange={(e) => setAccountId(e.target.value)}
-              className={inputStyles.base}
+              className="glass-sm mobile-input w-full rounded-lg px-3 py-2 sm:py-2.5 text-sm sm:text-base text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
               required
             >
               <option value="">Выберите счет</option>
@@ -244,7 +243,7 @@ export default function QuickTransactionModal({
           <div>
             <label
               htmlFor="category"
-              className="mb-2 block text-sm font-medium text-gray-700"
+              className="mb-1.5 block text-xs font-semibold text-foreground"
             >
               Категория
             </label>
@@ -253,7 +252,7 @@ export default function QuickTransactionModal({
               type="text"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className={inputStyles.base}
+              className="glass-sm mobile-input w-full rounded-lg px-3 py-2 sm:py-2.5 text-sm sm:text-base text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
               placeholder="Еда, транспорт..."
             />
           </div>
@@ -262,7 +261,7 @@ export default function QuickTransactionModal({
           <div>
             <label
               htmlFor="description"
-              className="mb-2 block text-sm font-medium text-gray-700"
+              className="mb-1.5 block text-xs font-semibold text-foreground"
             >
               Описание
             </label>
@@ -271,24 +270,24 @@ export default function QuickTransactionModal({
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className={inputStyles.base}
+              className="glass-sm mobile-input w-full rounded-lg px-3 py-2 sm:py-2.5 text-sm sm:text-base text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
               placeholder="Опционально"
             />
           </div>
 
           {/* Кнопки */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-2 pt-3 sm:pt-4">
             <button
               type="button"
               onClick={onClose}
-              className={buttonStyles.secondary + " flex-1"}
+              className="flex-1 smooth-transition rounded-lg bg-white/50 dark:bg-white/8 px-3 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm text-foreground hover:shadow-lg active:scale-95 disabled:opacity-50"
               disabled={isLoading}
             >
               Отмена
             </button>
             <button
               type="submit"
-              className={buttonStyles.primary + " flex-1"}
+              className="flex-1 smooth-transition rounded-lg bg-linear-to-r from-accent to-accent/80 px-3 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm text-white hover:shadow-lg active:scale-95 disabled:opacity-50"
               disabled={isLoading}
             >
               {isLoading ? "Создание..." : "Добавить"}

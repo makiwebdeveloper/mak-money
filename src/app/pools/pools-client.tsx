@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Database } from "@/lib/types/database";
 import { CURRENCIES } from "@/lib/constants/currencies";
-import { buttonStyles, inputStyles } from "@/lib/styles/components";
 import AllocationManager from "@/components/allocation-manager";
 
 type Pool = Database["public"]["Tables"]["money_pools"]["Row"];
@@ -175,94 +174,104 @@ export default function PoolsClient({
   const freeBalance = freePool ? getPoolBalance(freePool.id) : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-background to-background/95 p-3 sm:p-4 md:p-6 pt-32 md:pt-0 pb-24 md:pb-0">
       <div className="mx-auto max-w-4xl">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Money Pools</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Manage how your money is allocated
+        <div className="mb-8 sm:mb-10">
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-foreground via-accent to-foreground bg-clip-text text-transparent mb-1 sm:mb-2">
+            Пулы денег
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
+            Управление и распределение средств
           </p>
         </div>
 
         {/* Total and Free Balance */}
-        <div className="mb-6 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-lg bg-white p-6 shadow">
-            <p className="text-sm text-gray-600">Total Balance</p>
-            <p className="text-3xl font-bold text-gray-900">
+        <div className="mb-6 sm:mb-8 grid gap-3 grid-cols-1 sm:grid-cols-2">
+          <div className="card-glass p-4 sm:p-5">
+            <p className="text-xs sm:text-sm font-semibold text-muted-foreground">
+              Всего в пулах
+            </p>
+            <p className="mt-1.5 sm:mt-2 text-2xl sm:text-3xl font-bold text-accent">
               {currencySymbol}
               {totalBalance.toFixed(2)}
             </p>
           </div>
-          <div className="rounded-lg bg-gradient-to-br from-green-500 to-green-600 p-6 text-white shadow-lg">
-            <p className="text-sm font-medium opacity-90">Свободные средства</p>
-            <p className="text-3xl font-bold">
+          <div className="card-glass p-4 sm:p-5 group">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 smooth-transition rounded-2xl"></div>
+            <p className="relative text-xs sm:text-sm font-semibold text-muted-foreground">
+              Свободные средства
+            </p>
+            <p className="relative mt-1.5 sm:mt-2 text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400">
               {currencySymbol}
               {freeBalance.toFixed(2)}
             </p>
-            <p className="mt-1 text-xs opacity-75">
+            <p className="relative mt-1 sm:mt-2 text-xs sm:text-sm text-muted-foreground">
               Доступно для распределения
             </p>
           </div>
         </div>
 
         {/* Toggle between Active and Archived */}
-        <div className="mb-6 flex space-x-2">
+        <div className="mb-4 sm:mb-6 flex gap-2">
           <button
             onClick={() => setShowArchived(false)}
-            className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+            className={`smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-6 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm touch-target ${
               !showArchived
-                ? "bg-gray-900 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-100"
+                ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-md sm:shadow-lg"
+                : "glass hover:shadow-md"
             }`}
           >
-            Active ({activePools.length})
+            Активные ({activePools.length})
           </button>
           <button
             onClick={() => setShowArchived(true)}
-            className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+            className={`smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-6 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm touch-target ${
               showArchived
-                ? "bg-gray-900 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-100"
+                ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-md sm:shadow-lg"
+                : "glass hover:shadow-md"
             }`}
           >
-            Archived ({archivedPools.length})
+            Архивированные ({archivedPools.length})
           </button>
         </div>
 
         {/* Pools List */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {displayedPools.length === 0 ? (
-            <div className="rounded-lg bg-white p-12 text-center shadow">
-              <p className="text-gray-500">
-                {showArchived ? "No archived pools" : "No active pools found"}
+            <div className="card-glass text-center py-12 sm:py-16">
+              <p className="text-sm sm:text-base text-muted-foreground">
+                {showArchived
+                  ? "Нет архивированных пулов"
+                  : "Нет активных пулов"}
               </p>
             </div>
           ) : (
             displayedPools.map((pool) => (
-              <div
-                key={pool.id}
-                className="rounded-lg bg-white p-6 shadow transition-shadow hover:shadow-md"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
+              <div key={pool.id} className="card-glass p-4 sm:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
                     <div
-                      className="h-12 w-12 rounded-full"
+                      className="h-12 sm:h-14 w-12 sm:w-14 rounded-full shadow-lg flex-shrink-0"
                       style={{ backgroundColor: pool.color }}
                     />
-                    <div>
-                      <h3 className="font-semibold text-gray-900">
+                    <div className="min-w-0">
+                      <h3 className="text-base sm:text-lg font-bold text-foreground truncate">
                         {pool.name}
                       </h3>
-                      <p className="text-sm text-gray-500 capitalize">
-                        {pool.type}
+                      <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm capitalize text-muted-foreground">
+                        {pool.type === "free"
+                          ? "Свободные"
+                          : pool.type === "custom"
+                            ? "Пользовательский"
+                            : pool.type}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-4">
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-gray-900">
+                  <div className="flex items-center justify-between sm:justify-start gap-2 flex-shrink-0">
+                    <div className="text-right sm:text-left">
+                      <p className="text-lg sm:text-2xl font-bold text-accent">
                         {currencySymbol}
                         {getPoolBalance(pool.id).toFixed(2)}
                       </p>
@@ -270,27 +279,27 @@ export default function PoolsClient({
 
                     {showArchived ? (
                       // Archived pool actions
-                      <div className="flex space-x-2">
+                      <div className="flex gap-2 sm:gap-3">
                         <button
                           onClick={() => handleRestorePool(pool.id)}
                           disabled={isLoading}
-                          className="rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+                          className="smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-lg active:scale-95 touch-target"
                         >
-                          Restore
+                          Восстановить
                         </button>
                         <button
                           onClick={() =>
                             handlePermanentDelete(pool.id, pool.type)
                           }
                           disabled={isLoading}
-                          className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                          className="smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs bg-gradient-to-r from-red-500 to-red-600 text-white hover:shadow-lg active:scale-95 touch-target"
                         >
-                          Delete
+                          Удалить
                         </button>
                       </div>
                     ) : (
                       // Active pool actions
-                      <div className="flex space-x-2">
+                      <div className="flex gap-2 sm:gap-3">
                         {/* Кнопка управления распределением - только для не-free пулов */}
                         {pool.type !== "free" && (
                           <button
@@ -302,7 +311,7 @@ export default function PoolsClient({
                               })
                             }
                             disabled={isLoading}
-                            className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                            className="smooth-transition rounded-xl px-3 sm:px-6 py-2.5 sm:py-3 font-semibold text-xs sm:text-sm bg-gradient-to-r from-accent to-accent/80 text-white hover:shadow-lg active:scale-95 touch-target"
                           >
                             Распределить
                           </button>
@@ -311,9 +320,9 @@ export default function PoolsClient({
                           <button
                             onClick={() => handleDeletePool(pool.id, pool.type)}
                             disabled={isLoading}
-                            className="rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+                            className="smooth-transition rounded-xl px-3 sm:px-6 py-2.5 sm:py-3 font-semibold text-xs sm:text-sm glass hover:shadow-md text-foreground touch-target"
                           >
-                            Archive
+                            Архив
                           </button>
                         )}
                       </div>
@@ -325,40 +334,37 @@ export default function PoolsClient({
           )}
         </div>
 
-        {/* Create New Pool - only show when viewing active pools */}
+        {/* Create New Pool */}
         {!showArchived && (
-          <div className="mt-6">
+          <div className="mt-8">
             {!isCreating ? (
               <button
                 onClick={() => setIsCreating(true)}
-                className="w-full rounded-lg border-2 border-dashed border-gray-300 p-6 text-gray-600 hover:border-gray-400 hover:text-gray-900"
+                className="glass-sm w-full smooth-transition rounded-2xl border-2 border-dashed border-accent/30 p-6 sm:p-8 text-center font-semibold text-xs sm:text-sm text-muted-foreground hover:border-accent hover:shadow-md touch-target"
               >
-                + Create New Pool
+                Создать новый пул
               </button>
             ) : (
-              <form
-                onSubmit={handleCreatePool}
-                className="rounded-lg bg-white p-6 shadow"
-              >
-                <h3 className="mb-4 font-semibold text-gray-900">
-                  Create New Pool
+              <form onSubmit={handleCreatePool} className="card-glass">
+                <h3 className="mb-5 sm:mb-6 text-xl sm:text-2xl font-bold text-foreground">
+                  Новый пул денег
                 </h3>
                 <input
                   type="text"
                   value={newPoolName}
                   onChange={(e) => setNewPoolName(e.target.value)}
-                  placeholder="Pool name (e.g., Rent, Savings, Goals)"
-                  className="mb-4 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                  placeholder="Например: Аренда, Сбережения"
+                  className="glass-sm mobile-input mb-5 sm:mb-6 w-full rounded-xl px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
                   autoFocus
                   disabled={isLoading}
                 />
-                <div className="flex space-x-3">
+                <div className="flex gap-2 sm:gap-3">
                   <button
                     type="submit"
                     disabled={isLoading || !newPoolName.trim()}
-                    className="flex-1 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex-1 smooth-transition rounded-xl bg-gradient-to-r from-accent to-accent/80 px-4 py-2.5 sm:py-3 font-semibold text-sm sm:text-base text-white hover:shadow-lg active:scale-95 disabled:opacity-50 touch-target"
                   >
-                    {isLoading ? "Creating..." : "Create"}
+                    {isLoading ? "Создание..." : "Создать"}
                   </button>
                   <button
                     type="button"
@@ -367,9 +373,9 @@ export default function PoolsClient({
                       setNewPoolName("");
                     }}
                     disabled={isLoading}
-                    className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                    className="flex-1 smooth-transition rounded-xl glass hover:shadow-md text-foreground font-semibold text-sm sm:text-base touch-target"
                   >
-                    Cancel
+                    Отмена
                   </button>
                 </div>
               </form>
