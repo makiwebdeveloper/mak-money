@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Database } from "@/lib/types/database";
 import { CURRENCIES } from "@/lib/constants/currencies";
 import { buttonStyles, inputStyles } from "@/lib/styles/components";
+import AllocationManager from "@/components/allocation-manager";
 
 type Pool = Database["public"]["Tables"]["money_pools"]["Row"];
 
@@ -29,6 +30,11 @@ export default function PoolsClient({
   const [newPoolName, setNewPoolName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
+  const [editingPool, setEditingPool] = useState<{
+    id: string;
+    name: string;
+    amount: number;
+  } | null>(null);
 
   const currencySymbol =
     CURRENCIES.find((c) => c.code === currency)?.symbol || "$";
@@ -164,8 +170,12 @@ export default function PoolsClient({
   const activePools = pools.filter((p) => p.is_active);
   const archivedPools = pools.filter((p) => !p.is_active);
 
+  // Получаем баланс свободных средств
+  const freePool = pools.find((p) => p.name === "Свободные");
+  const freeBalance = freePool ? getPoolBalance(freePool.id) : 0;
+
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-gray-50 p-4 pb-20">
       <div className="mx-auto max-w-4xl">
         {/* Header */}
         <div className="mb-8">
@@ -175,13 +185,25 @@ export default function PoolsClient({
           </p>
         </div>
 
-        {/* Total Balance */}
-        <div className="mb-6 rounded-lg bg-white p-6 shadow">
-          <p className="text-sm text-gray-600">Total Balance</p>
-          <p className="text-3xl font-bold text-gray-900">
-            {currencySymbol}
-            {totalBalance.toFixed(2)}
-          </p>
+        {/* Total and Free Balance */}
+        <div className="mb-6 grid gap-4 sm:grid-cols-2">
+          <div className="rounded-lg bg-white p-6 shadow">
+            <p className="text-sm text-gray-600">Total Balance</p>
+            <p className="text-3xl font-bold text-gray-900">
+              {currencySymbol}
+              {totalBalance.toFixed(2)}
+            </p>
+          </div>
+          <div className="rounded-lg bg-gradient-to-br from-green-500 to-green-600 p-6 text-white shadow-lg">
+            <p className="text-sm font-medium opacity-90">Свободные средства</p>
+            <p className="text-3xl font-bold">
+              {currencySymbol}
+              {freeBalance.toFixed(2)}
+            </p>
+            <p className="mt-1 text-xs opacity-75">
+              Доступно для распределения
+            </p>
+          </div>
         </div>
 
         {/* Toggle between Active and Archived */}
@@ -268,15 +290,33 @@ export default function PoolsClient({
                       </div>
                     ) : (
                       // Active pool actions
-                      pool.type !== "free" && (
-                        <button
-                          onClick={() => handleDeletePool(pool.id, pool.type)}
-                          disabled={isLoading}
-                          className="rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
-                        >
-                          Archive
-                        </button>
-                      )
+                      <div className="flex space-x-2">
+                        {/* Кнопка управления распределением - только для не-free пулов */}
+                        {pool.type !== "free" && (
+                          <button
+                            onClick={() =>
+                              setEditingPool({
+                                id: pool.id,
+                                name: pool.name,
+                                amount: getPoolBalance(pool.id),
+                              })
+                            }
+                            disabled={isLoading}
+                            className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                          >
+                            Распределить
+                          </button>
+                        )}
+                        {pool.type !== "free" && (
+                          <button
+                            onClick={() => handleDeletePool(pool.id, pool.type)}
+                            disabled={isLoading}
+                            className="rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+                          >
+                            Archive
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -335,6 +375,20 @@ export default function PoolsClient({
               </form>
             )}
           </div>
+        )}
+
+        {/* Allocation Manager Modal */}
+        {editingPool && (
+          <AllocationManager
+            poolId={editingPool.id}
+            poolName={editingPool.name}
+            currentAmount={editingPool.amount}
+            freeBalance={freeBalance}
+            onClose={() => setEditingPool(null)}
+            onSuccess={() => {
+              window.location.reload();
+            }}
+          />
         )}
       </div>
     </div>

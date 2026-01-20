@@ -17,6 +17,7 @@ const eslintConfig = defineConfig([
     rules: {
       // Полностью отключить проверку неиспользуемых переменных
       "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-explicit-any": "off",
     },
   },
 ]);

@@ -55,6 +55,27 @@ export default async function PoolsPage() {
       [] as Array<{ pool_id: string; total_amount: number }>,
     ) || [];
 
+  // For free pool, calculate balance using RPC function
+  const freePool = pools?.find((p) => p.type === "free");
+  if (freePool) {
+    const { data: freeBalance } = await supabase.rpc("get_pool_balance", {
+      p_pool_id: freePool.id,
+    });
+
+    // Update or add free pool balance
+    const existingFreeBalance = poolBalances.find(
+      (b) => b.pool_id === freePool.id,
+    );
+    if (existingFreeBalance) {
+      existingFreeBalance.total_amount = Number(freeBalance) || 0;
+    } else {
+      poolBalances.push({
+        pool_id: freePool.id,
+        total_amount: Number(freeBalance) || 0,
+      });
+    }
+  }
+
   return (
     <PoolsClient
       pools={pools || []}

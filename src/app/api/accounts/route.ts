@@ -83,27 +83,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // If there's an initial balance, allocate it to the Free pool
-    if (account && balance && balance > 0) {
-      // Find or create the Free pool
-      const { data: freePool } = await supabase
-        .from("money_pools")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("type", "free")
-        .single();
-
-      if (freePool) {
-        // Create allocation for the initial balance
-        await supabase.from("allocations").insert({
-          user_id: user.id,
-          pool_id: freePool.id,
-          account_id: account.id,
-          amount: balance,
-          currency,
-        });
-      }
-    }
+    // Note: No need to create allocation in free pool
+    // Free balance is calculated automatically as: Total Balance - Sum of Allocations
 
     return NextResponse.json({ account }, { status: 201 });
   } catch (error) {
