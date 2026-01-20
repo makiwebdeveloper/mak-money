@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Database } from "@/lib/types/database";
 import { CURRENCIES, CurrencyCode } from "@/lib/constants/currencies";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AccountsSkeleton } from "@/components/accounts-skeleton";
 
 type Account = Database["public"]["Tables"]["accounts"]["Row"];
 type AccountType = Database["public"]["Tables"]["accounts"]["Row"]["type"];
@@ -292,18 +294,21 @@ export default function AccountsClient({
           </form>
         ) : (
           <>
-            {/* Accounts List */}
-            <div className="space-y-3">
-              {displayedAccounts.length === 0 ? (
-                <div className="card-glass text-center py-16">
-                  <p className="text-lg text-muted-foreground">
-                    {showArchived
-                      ? "Нет архивированных счетов"
-                      : "Нет счетов. Создайте свой первый счет."}
-                  </p>
-                </div>
-              ) : (
-                displayedAccounts.map((account) => (
+            {/* Loading state */}
+            {loading && displayedAccounts.length === 0 ? (
+              <AccountsSkeleton />
+            ) : (
+              <div className="space-y-3">
+                {displayedAccounts.length === 0 ? (
+                  <div className="card-glass text-center py-16">
+                    <p className="text-lg text-muted-foreground">
+                      {showArchived
+                        ? "Нет архивированных счетов"
+                        : "Нет счетов. Создайте свой первый счет."}
+                    </p>
+                  </div>
+                ) : (
+                  displayedAccounts.map((account) => (
                   <div key={account.id} className="card-glass p-3 sm:p-4">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div className="min-w-0 flex-1">
@@ -357,8 +362,9 @@ export default function AccountsClient({
                     </div>
                   </div>
                 ))
-              )}
-            </div>
+                )}
+              </div>
+            )}
 
             {/* Create New Account Button */}
             {!showArchived && (

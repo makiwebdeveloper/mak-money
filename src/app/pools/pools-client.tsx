@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Database } from "@/lib/types/database";
 import { CURRENCIES } from "@/lib/constants/currencies";
 import AllocationManager from "@/components/allocation-manager";
+import { PoolsSkeleton } from "@/components/pools-skeleton";
 
 type Pool = Database["public"]["Tables"]["money_pools"]["Row"];
 
@@ -237,17 +238,20 @@ export default function PoolsClient({
         </div>
 
         {/* Pools List */}
-        <div className="space-y-3">
-          {displayedPools.length === 0 ? (
-            <div className="card-glass text-center py-12 sm:py-16">
-              <p className="text-sm sm:text-base text-muted-foreground">
-                {showArchived
-                  ? "Нет архивированных пулов"
-                  : "Нет активных пулов"}
-              </p>
-            </div>
-          ) : (
-            displayedPools.map((pool) => (
+        {isLoading && displayedPools.length === 0 ? (
+          <PoolsSkeleton />
+        ) : (
+          <div className="space-y-3">
+            {displayedPools.length === 0 ? (
+              <div className="card-glass text-center py-12 sm:py-16">
+                <p className="text-sm sm:text-base text-muted-foreground">
+                  {showArchived
+                    ? "Нет архивированных пулов"
+                    : "Нет активных пулов"}
+                </p>
+              </div>
+            ) : (
+              displayedPools.map((pool) => (
               <div key={pool.id} className="card-glass p-4 sm:p-5">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-center gap-2 min-w-0">
@@ -331,8 +335,9 @@ export default function PoolsClient({
                 </div>
               </div>
             ))
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         {/* Create New Pool */}
         {!showArchived && (

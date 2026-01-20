@@ -1,8 +1,10 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import PoolsClient from "./pools-client";
+import { PoolsSkeleton } from "@/components/pools-skeleton";
 
-export default async function PoolsPage() {
+async function PoolsContent() {
   const supabase = await createClient();
 
   const {
@@ -83,5 +85,13 @@ export default async function PoolsPage() {
       currency={userData.default_currency}
       userId={user.id}
     />
+  );
+}
+
+export default function PoolsPage() {
+  return (
+    <Suspense fallback={<PoolsSkeleton />}>
+      <PoolsContent />
+    </Suspense>
   );
 }

@@ -1,8 +1,10 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import TransactionsClient from "./transactions-client";
+import { TransactionsSkeleton } from "@/components/transactions-skeleton";
 
-export default async function TransactionsPage() {
+async function TransactionsContent() {
   const supabase = await createClient();
 
   const {
@@ -30,5 +32,13 @@ export default async function TransactionsPage() {
       initialTransactions={transactions || []}
       accounts={accounts || []}
     />
+  );
+}
+
+export default function TransactionsPage() {
+  return (
+    <Suspense fallback={<TransactionsSkeleton />}>
+      <TransactionsContent />
+    </Suspense>
   );
 }

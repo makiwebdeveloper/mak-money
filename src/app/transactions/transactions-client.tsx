@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Database } from "@/lib/types/database";
+import { TransactionsSkeleton } from "@/components/transactions-skeleton";
 
 type Transaction = Database["public"]["Tables"]["transactions"]["Row"];
 type Account = Database["public"]["Tables"]["accounts"]["Row"];
@@ -334,7 +335,9 @@ export default function TransactionsClient({
         )}
 
         {/* Transactions List */}
-        {transactions.length === 0 ? (
+        {isLoading && transactions.length === 0 ? (
+          <TransactionsSkeleton />
+        ) : transactions.length === 0 ? (
           <div className="card-glass py-12 sm:py-16 text-center text-xs sm:text-base text-muted-foreground">
             Транзакций еще нет
           </div>
