@@ -7,6 +7,7 @@ const navItems = [
   { href: "/", label: "Главная" },
   { href: "/accounts", label: "Счета" },
   { href: "/pools", label: "Пулы" },
+  { href: "/transactions", label: "Транзакции" },
 ];
 
 export function Navigation() {

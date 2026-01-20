@@ -3,17 +3,25 @@
 import { useState } from "react";
 import { Database } from "@/lib/types/database";
 import { CURRENCIES } from "@/lib/constants/currencies";
+import { buttonStyles, inputStyles } from "@/lib/styles/components";
 
 type Pool = Database["public"]["Tables"]["money_pools"]["Row"];
 
+interface PoolBalance {
+  pool_id: string;
+  total_amount: number;
+}
+
 interface PoolsClientProps {
   pools: Pool[];
+  poolBalances: PoolBalance[];
   currency: string;
   userId: string;
 }
 
 export default function PoolsClient({
   pools: initialPools,
+  poolBalances,
   currency,
 }: PoolsClientProps) {
   const [pools, setPools] = useState<Pool[]>(initialPools);
@@ -143,10 +151,10 @@ export default function PoolsClient({
     }
   };
 
-  // Mock balance (will be real after transactions in Stage 4)
+  // Get real balance from allocations
   const getPoolBalance = (poolId: string) => {
-    const freePool = pools.find((p) => p.type === "free");
-    return poolId === freePool?.id ? 1000 : 0;
+    const balance = poolBalances.find((b) => b.pool_id === poolId);
+    return balance?.total_amount || 0;
   };
 
   const totalBalance = pools

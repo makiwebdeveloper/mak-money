@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Database } from "@/lib/types/database";
 import { CURRENCIES, CurrencyCode } from "@/lib/constants/currencies";
+import { buttonStyles, inputStyles } from "@/lib/styles/components";
 
 type Account = Database["public"]["Tables"]["accounts"]["Row"];
 type AccountType = Database["public"]["Tables"]["accounts"]["Row"]["type"];
@@ -170,21 +171,15 @@ export default function AccountsClient({
         <div className="mb-6 flex space-x-2">
           <button
             onClick={() => setShowArchived(false)}
-            className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-              !showArchived
-                ? "bg-gray-900 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-100"
-            }`}
+            className={
+              !showArchived ? buttonStyles.primary : buttonStyles.ghost
+            }
           >
             Active ({activeAccounts.length})
           </button>
           <button
             onClick={() => setShowArchived(true)}
-            className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-              showArchived
-                ? "bg-gray-900 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-100"
-            }`}
+            className={showArchived ? buttonStyles.primary : buttonStyles.ghost}
           >
             Archived ({archivedAccounts.length})
           </button>
@@ -211,7 +206,7 @@ export default function AccountsClient({
                     setFormData({ ...formData, name: e.target.value })
                   }
                   placeholder="e.g., Main Card, Savings Account"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                  className={inputStyles.base}
                   required
                   autoFocus
                 />
@@ -331,14 +326,14 @@ export default function AccountsClient({
                           <button
                             onClick={() => handleRestore(account.id)}
                             disabled={loading}
-                            className="rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+                            className={buttonStyles.success}
                           >
                             Restore
                           </button>
                           <button
                             onClick={() => handlePermanentDelete(account.id)}
                             disabled={loading}
-                            className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                            className={buttonStyles.danger}
                           >
                             Delete
                           </button>
@@ -348,7 +343,7 @@ export default function AccountsClient({
                         <button
                           onClick={() => handleArchive(account.id)}
                           disabled={loading}
-                          className="rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+                          className={buttonStyles.dangerSmall}
                         >
                           Archive
                         </button>
@@ -364,7 +359,7 @@ export default function AccountsClient({
               <div className="mt-6">
                 <button
                   onClick={() => setIsCreating(true)}
-                  className="w-full rounded-lg border-2 border-dashed border-gray-300 p-6 text-gray-600 hover:border-gray-400 hover:text-gray-900"
+                  className={buttonStyles.primary}
                 >
                   + Create New Account
                 </button>
