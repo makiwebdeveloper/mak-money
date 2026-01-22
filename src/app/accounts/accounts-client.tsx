@@ -6,15 +6,20 @@ import { CURRENCIES, CurrencyCode } from "@/lib/constants/currencies";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AccountsSkeleton } from "@/components/accounts-skeleton";
 
-type Account = Database["public"]["Tables"]["accounts"]["Row"];
+type Account = Database["public"]["Tables"]["accounts"]["Row"] & {
+  convertedBalance?: number;
+  defaultCurrency?: string;
+};
 type AccountType = Database["public"]["Tables"]["accounts"]["Row"]["type"];
 
 interface AccountsClientProps {
   initialAccounts: Account[];
+  defaultCurrency: string;
 }
 
 export default function AccountsClient({
   initialAccounts,
+  defaultCurrency,
 }: AccountsClientProps) {
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
   const [loading, setLoading] = useState(false);
@@ -26,7 +31,7 @@ export default function AccountsClient({
   const [formData, setFormData] = useState({
     name: "",
     type: "other" as AccountType,
-    currency: "USD" as CurrencyCode,
+    currency: (defaultCurrency || "USD") as CurrencyCode,
     balance: 0,
   });
 
@@ -323,13 +328,29 @@ export default function AccountsClient({
                                 : "Other"}{" "}
                             • {account.currency}
                           </p>
-                          <p className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-bold text-accent">
-                            {getCurrencySymbol(account.currency)}{" "}
-                            {account.balance.toLocaleString("en-US", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}
-                          </p>
+                          <div className="mt-1.5 sm:mt-2">
+                            <p className="text-xl sm:text-2xl font-bold text-accent">
+                              {getCurrencySymbol(account.currency)}{" "}
+                              {account.balance.toLocaleString("en-US", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </p>
+                            {account.currency !== defaultCurrency &&
+                              account.convertedBalance !== undefined && (
+                                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                                  ≈ {getCurrencySymbol(defaultCurrency)}{" "}
+                                  {account.convertedBalance.toLocaleString(
+                                    "en-US",
+                                    {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    },
+                                  )}{" "}
+                                  ({defaultCurrency})
+                                </p>
+                              )}
+                          </div>
                         </div>
                         {showArchived ? (
                           // Archived account actions

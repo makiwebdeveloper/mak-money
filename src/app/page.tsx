@@ -1,6 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import {
+  getTotalBalanceInCurrency,
+  convertCurrency,
+} from "@/lib/constants/exchange-rates";
+import { CurrencyCode } from "@/lib/constants/currencies";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -19,39 +24,60 @@ export default async function Home() {
     .eq("id", user.id)
     .single();
 
-  // Get all accounts
+  const currency = (profile?.default_currency || "USD") as CurrencyCode;
+
+  // Get all active accounts
   const { data: accounts } = await supabase
     .from("accounts")
     .select("*")
     .eq("user_id", user.id)
+    .eq("is_active", true)
     .order("created_at", { ascending: true });
 
-  // Calculate total balance
-  const totalBalance =
-    accounts?.reduce((sum, acc) => sum + Number(acc.balance), 0) || 0;
-  const currency = profile?.default_currency || "USD";
+  // Calculate total balance in user's default currency using real exchange rates
+  const totalBalance = await getTotalBalanceInCurrency(
+    accounts || [],
+    currency,
+  );
 
   // Get free funds balance
   const { data: freePool } = await supabase
     .from("money_pools")
     .select("id")
     .eq("user_id", user.id)
-    .eq("name", "Free")
+    .eq("type", "free")
     .single();
 
   let freeBalance = 0;
   if (freePool) {
-    const { data: balanceData } = await supabase.rpc("get_pool_balance", {
-      p_pool_id: freePool.id,
-    });
+    // Calculate free balance by converting all amounts to user's currency
+    // Get all allocations (excluding free pool)
+    const { data: allocations } = await supabase
+      .from("allocations")
+      .select("amount, accounts(currency)")
+      .eq("user_id", user.id)
+      .neq("pool_id", freePool.id);
 
-    freeBalance = Number(balanceData) || 0;
+    // Convert all allocations to default currency
+    let totalAllocated = 0;
+    for (const allocation of allocations || []) {
+      const accountCurrency =
+        (allocation.accounts as any)?.currency || currency;
+      const converted = await convertCurrency(
+        allocation.amount,
+        accountCurrency as CurrencyCode,
+        currency,
+      );
+      totalAllocated += converted;
+    }
+
+    freeBalance = Number((totalBalance - totalAllocated).toFixed(2));
   }
 
   // Get last 5 transactions
   const { data: recentTransactions } = await supabase
     .from("transactions")
-    .select("*, accounts!transactions_account_id_fkey(name)")
+    .select("*, accounts!transactions_account_id_fkey(name, currency)")
     .eq("user_id", user.id)
     .order("transaction_date", { ascending: false })
     .order("created_at", { ascending: false })

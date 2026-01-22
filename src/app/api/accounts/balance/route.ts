@@ -38,7 +38,8 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const totalBalance = getTotalBalanceInCurrency(
+    // Convert all balances to user's default currency using real exchange rates
+    const totalBalance = await getTotalBalanceInCurrency(
       accounts || [],
       defaultCurrency,
     );

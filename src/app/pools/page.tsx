@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import PoolsClient from "./pools-client";
 import { PoolsSkeleton } from "@/components/pools-skeleton";
+import { convertCurrency } from "@/lib/constants/exchange-rates";
+import { CurrencyCode } from "@/lib/constants/currencies";
 
 async function PoolsContent() {
   const supabase = await createClient();
@@ -26,6 +28,8 @@ async function PoolsContent() {
     redirect("/onboarding");
   }
 
+  const defaultCurrency = userData.default_currency as CurrencyCode;
+
   // Fetch all pools (active and archived)
   const { data: pools } = await supabase
     .from("money_pools")
@@ -33,47 +37,85 @@ async function PoolsContent() {
     .eq("user_id", user.id)
     .order("created_at", { ascending: true });
 
-  // Calculate pool balances from allocations
+  // Calculate pool balances from allocations with currency conversion
   const { data: allocations } = await supabase
     .from("allocations")
-    .select("pool_id, amount")
+    .select("pool_id, amount, accounts(currency)")
     .eq("user_id", user.id);
 
-  // Sum allocations by pool_id
-  const poolBalances =
-    allocations?.reduce(
-      (acc, allocation) => {
-        const existing = acc.find((b) => b.pool_id === allocation.pool_id);
-        if (existing) {
-          existing.total_amount += Number(allocation.amount);
-        } else {
-          acc.push({
-            pool_id: allocation.pool_id,
-            total_amount: Number(allocation.amount),
-          });
-        }
-        return acc;
-      },
-      [] as Array<{ pool_id: string; total_amount: number }>,
-    ) || [];
+  // Sum allocations by pool_id, converting to default currency
+  const poolBalances: Array<{ pool_id: string; total_amount: number }> = [];
 
-  // For free pool, calculate balance using RPC function
+  for (const allocation of allocations || []) {
+    const accountCurrency =
+      (allocation.accounts as any)?.currency || defaultCurrency;
+    const convertedAmount = await convertCurrency(
+      allocation.amount,
+      accountCurrency as CurrencyCode,
+      defaultCurrency,
+    );
+
+    const existing = poolBalances.find((b) => b.pool_id === allocation.pool_id);
+    if (existing) {
+      existing.total_amount += convertedAmount;
+    } else {
+      poolBalances.push({
+        pool_id: allocation.pool_id,
+        total_amount: convertedAmount,
+      });
+    }
+  }
+
+  // For free pool, calculate balance properly with currency conversion
   const freePool = pools?.find((p) => p.type === "free");
   if (freePool) {
-    const { data: freeBalance } = await supabase.rpc("get_pool_balance", {
-      p_pool_id: freePool.id,
-    });
+    // Get all accounts
+    const { data: accounts } = await supabase
+      .from("accounts")
+      .select("balance, currency")
+      .eq("user_id", user.id)
+      .eq("is_active", true);
+
+    // Convert all account balances to default currency
+    let totalAccountBalance = 0;
+    for (const account of accounts || []) {
+      const converted = await convertCurrency(
+        account.balance,
+        account.currency as CurrencyCode,
+        defaultCurrency,
+      );
+      totalAccountBalance += converted;
+    }
+
+    // Get total allocated (excluding free pool) in default currency
+    let totalAllocated = 0;
+    for (const allocation of allocations || []) {
+      if (allocation.pool_id !== freePool.id) {
+        const accountCurrency =
+          (allocation.accounts as any)?.currency || defaultCurrency;
+        const converted = await convertCurrency(
+          allocation.amount,
+          accountCurrency as CurrencyCode,
+          defaultCurrency,
+        );
+        totalAllocated += converted;
+      }
+    }
+
+    const freeBalance = Number(
+      (totalAccountBalance - totalAllocated).toFixed(2),
+    );
 
     // Update or add free pool balance
     const existingFreeBalance = poolBalances.find(
       (b) => b.pool_id === freePool.id,
     );
     if (existingFreeBalance) {
-      existingFreeBalance.total_amount = Number(freeBalance) || 0;
+      existingFreeBalance.total_amount = freeBalance;
     } else {
       poolBalances.push({
         pool_id: freePool.id,
-        total_amount: Number(freeBalance) || 0,
+        total_amount: freeBalance,
       });
     }
   }
@@ -82,7 +124,7 @@ async function PoolsContent() {
     <PoolsClient
       pools={pools || []}
       poolBalances={poolBalances}
-      currency={userData.default_currency}
+      currency={defaultCurrency}
       userId={user.id}
     />
   );

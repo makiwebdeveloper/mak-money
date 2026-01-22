@@ -1,38 +1,8 @@
-import { CurrencyCode } from "./currencies";
-
-// Static exchange rates (MVP assumption)
-// Can be replaced with API for actual rates in the future
-const EXCHANGE_RATES: Record<CurrencyCode, number> = {
-  USD: 1.0,
-  EUR: 0.92,
-  SEK: 10.5,
-  UAH: 36.5,
-};
-
-export function convertCurrency(
-  amount: number,
-  from: CurrencyCode,
-  to: CurrencyCode,
-): number {
-  if (from === to) return amount;
-
-  // Convert through USD as base currency
-  const amountInUSD = amount / EXCHANGE_RATES[from];
-  const amountInTargetCurrency = amountInUSD * EXCHANGE_RATES[to];
-
-  return Number(amountInTargetCurrency.toFixed(2));
-}
-
-export function getTotalBalanceInCurrency(
-  accounts: Array<{ balance: number; currency: string }>,
-  targetCurrency: CurrencyCode,
-): number {
-  return accounts.reduce((total, account) => {
-    const converted = convertCurrency(
-      account.balance,
-      account.currency as CurrencyCode,
-      targetCurrency,
-    );
-    return total + converted;
-  }, 0);
-}
+// Re-export functions from the exchange rate service
+// This file is kept for backward compatibility but now uses real API rates
+export {
+  convertCurrency,
+  getTotalBalanceInCurrency,
+  getExchangeRates,
+  convertMultipleAmounts,
+} from "../services/exchange-rate-service";

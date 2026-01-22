@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { convertCurrency } from "@/lib/constants/exchange-rates";
+import { CurrencyCode } from "@/lib/constants/currencies";
 
 // GET /api/accounts - Get all active accounts for current user
 export async function GET() {
@@ -14,6 +16,16 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Get user's default currency
+    const { data: userData } = await supabase
+      .from("users")
+      .select("default_currency")
+      .eq("id", user.id)
+      .single();
+
+    const defaultCurrency = (userData?.default_currency ||
+      "USD") as CurrencyCode;
+
     const { data: accounts, error } = await supabase
       .from("accounts")
       .select("*")
@@ -26,7 +38,27 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ accounts });
+    // Add converted balance to each account
+    const accountsWithConversion = await Promise.all(
+      (accounts || []).map(async (account) => {
+        const convertedBalance = await convertCurrency(
+          account.balance,
+          account.currency as CurrencyCode,
+          defaultCurrency,
+        );
+
+        return {
+          ...account,
+          convertedBalance,
+          defaultCurrency,
+        };
+      }),
+    );
+
+    return NextResponse.json({
+      accounts: accountsWithConversion,
+      defaultCurrency,
+    });
   } catch (error) {
     console.error("Error in accounts GET:", error);
     return NextResponse.json(

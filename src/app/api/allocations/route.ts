@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { convertCurrency } from "@/lib/constants/exchange-rates";
+import { CurrencyCode } from "@/lib/constants/currencies";
 
 // GET /api/allocations - Get all allocations for current user
 export async function GET(req: NextRequest) {
@@ -14,6 +16,16 @@ export async function GET(req: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Get user's default currency
+    const { data: userData } = await supabase
+      .from("users")
+      .select("default_currency")
+      .eq("id", user.id)
+      .single();
+
+    const defaultCurrency = (userData?.default_currency ||
+      "USD") as CurrencyCode;
 
     // Get query params for filtering
     const searchParams = req.nextUrl.searchParams;
@@ -38,7 +50,29 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ allocations });
+    // Add converted amounts to allocations
+    const allocationsWithConversion = await Promise.all(
+      (allocations || []).map(async (allocation) => {
+        const accountCurrency =
+          (allocation.accounts as any)?.currency || defaultCurrency;
+        const convertedAmount = await convertCurrency(
+          allocation.amount,
+          accountCurrency as CurrencyCode,
+          defaultCurrency,
+        );
+
+        return {
+          ...allocation,
+          convertedAmount,
+          defaultCurrency,
+        };
+      }),
+    );
+
+    return NextResponse.json({
+      allocations: allocationsWithConversion,
+      defaultCurrency,
+    });
   } catch (error) {
     console.error("Error fetching allocations:", error);
     return NextResponse.json(

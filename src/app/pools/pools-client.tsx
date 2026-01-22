@@ -163,16 +163,17 @@ export default function PoolsClient({
     return balance?.total_amount || 0;
   };
 
+  // Get free funds balance
+  const freePool = pools.find((p) => p.type === "free");
+  const freeBalance = freePool ? getPoolBalance(freePool.id) : 0;
+
+  // Total in Pools = sum of all active pools EXCEPT Free pool (only allocated money)
   const totalBalance = pools
-    .filter((p) => p.is_active)
+    .filter((p) => p.is_active && p.type !== "free")
     .reduce((sum, pool) => sum + getPoolBalance(pool.id), 0);
 
   const activePools = pools.filter((p) => p.is_active);
   const archivedPools = pools.filter((p) => !p.is_active);
-
-  // Get free funds balance
-  const freePool = pools.find((p) => p.name === "Free");
-  const freeBalance = freePool ? getPoolBalance(freePool.id) : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-background/95 p-3 sm:p-4 md:p-6 pt-32 md:pt-0 pb-24 md:pb-0">
