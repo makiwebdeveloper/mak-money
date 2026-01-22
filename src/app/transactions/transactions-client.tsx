@@ -122,18 +122,13 @@ export default function TransactionsClient({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-background/95 p-3 sm:p-4 md:p-6 pt-32 md:pt-0 pb-24 md:pb-0">
-      <div className="mx-auto max-w-4xl">
+    <div className="min-h-screen bg-gradient-to-br from-background to-background/95 pt-32 md:pt-0 pb-24 md:pb-0">
+      <div className="mx-auto max-w-4xl px-3 sm:px-4 py-6 sm:py-12 lg:px-8">
         {/* Header */}
         <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-foreground via-accent to-foreground bg-clip-text text-transparent mb-1 sm:mb-2">
-              Transactions
-            </h1>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              View and add operations
-            </p>
-          </div>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
+            Transactions
+          </h1>
           <button
             onClick={() => setIsCreating((v) => !v)}
             className={`smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-6 py-2 sm:py-2.5 font-semibold whitespace-nowrap text-xs sm:text-sm touch-target ${
@@ -206,7 +201,7 @@ export default function TransactionsClient({
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   className="glass-sm mobile-input w-full rounded-lg sm:rounded-xl px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
-                  placeholder="0.00"
+                  placeholder="Enter amount"
                   required
                 />
               </div>

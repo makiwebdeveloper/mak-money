@@ -87,23 +87,21 @@ export default function AccountsClient({
     return CURRENCIES.find((c) => c.code === code)?.symbol || code;
   };
 
-  const loading =
+  const loading = Boolean(
     isLoading ||
     createAccount.isPending ||
     updateAccount.isPending ||
-    deleteAccount.isPending;
+    deleteAccount.isPending,
+  );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-background/95 p-3 sm:p-4 md:p-6 pt-32 md:pt-0 pb-24 md:pb-0">
-      <div className="mx-auto max-w-4xl">
+    <div className="min-h-screen bg-gradient-to-br from-background to-background/95 pt-32 md:pt-0 pb-24 md:pb-0">
+      <div className="mx-auto max-w-4xl px-3 sm:px-4 py-6 sm:py-12 lg:px-8">
         {/* Header */}
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-foreground via-accent to-foreground bg-clip-text text-transparent mb-1 sm:mb-2">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
             Accounts
           </h1>
-          <p className="text-xs sm:text-base text-muted-foreground">
-            Manage your bank accounts
-          </p>
         </div>
 
         {/* Create Form or Accounts List */}
@@ -176,14 +174,15 @@ export default function AccountsClient({
                 <input
                   type="number"
                   step="0.01"
-                  value={formData.balance}
+                  value={formData.balance || ""}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
                       balance: parseFloat(e.target.value) || 0,
                     })
                   }
-                  className="glass-sm mobile-input w-full rounded-lg sm:rounded-xl px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
+                  placeholder="Enter balance (optional)"
+                  className="glass-sm mobile-input w-full rounded-lg sm:rounded-xl px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
                 />
               </div>
             </div>

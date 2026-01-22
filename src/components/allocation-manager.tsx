@@ -130,7 +130,7 @@ export default function AllocationManager({
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               className={inputStyles.base}
-              placeholder="0.00"
+              placeholder="Enter amount"
               required
             />
           </div>

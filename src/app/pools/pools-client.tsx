@@ -102,19 +102,16 @@ export default function PoolsClient({
     .filter((p) => p.is_active && p.type !== "free")
     .reduce((sum, pool) => sum + getPoolBalance(pool.id), 0);
 
-  const isLoading = createPool.isPending || deletePool.isPending;
+  const isLoading = Boolean(createPool.isPending || deletePool.isPending);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-background/95 p-3 sm:p-4 md:p-6 pt-32 md:pt-0 pb-24 md:pb-0">
-      <div className="mx-auto max-w-4xl">
+    <div className="min-h-screen bg-gradient-to-br from-background to-background/95 pt-32 md:pt-0 pb-24 md:pb-0">
+      <div className="mx-auto max-w-4xl px-3 sm:px-4 py-6 sm:py-12 lg:px-8">
         {/* Header */}
-        <div className="mb-8 sm:mb-10">
-          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-foreground via-accent to-foreground bg-clip-text text-transparent mb-1 sm:mb-2">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
             Money Pools
           </h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            Manage and allocate your funds
-          </p>
         </div>
 
         {/* Total and Free Balance */}

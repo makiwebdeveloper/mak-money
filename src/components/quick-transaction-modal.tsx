@@ -175,7 +175,7 @@ export default function QuickTransactionModal({
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               className="glass-sm mobile-input w-full rounded-lg px-3 py-2 sm:py-2.5 text-sm sm:text-base text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
-              placeholder="0.00"
+              placeholder="Enter amount"
               required
             />
           </div>
