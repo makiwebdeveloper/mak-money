@@ -170,8 +170,8 @@ export default function PoolsClient({
   const activePools = pools.filter((p) => p.is_active);
   const archivedPools = pools.filter((p) => !p.is_active);
 
-  // Получаем баланс свободных средств
-  const freePool = pools.find((p) => p.name === "Свободные");
+  // Get free funds balance
+  const freePool = pools.find((p) => p.name === "Free");
   const freeBalance = freePool ? getPoolBalance(freePool.id) : 0;
 
   return (
@@ -180,10 +180,10 @@ export default function PoolsClient({
         {/* Header */}
         <div className="mb-8 sm:mb-10">
           <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-foreground via-accent to-foreground bg-clip-text text-transparent mb-1 sm:mb-2">
-            Пулы денег
+            Money Pools
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            Управление и распределение средств
+            Manage and allocate your funds
           </p>
         </div>
 
@@ -191,7 +191,7 @@ export default function PoolsClient({
         <div className="mb-6 sm:mb-8 grid gap-3 grid-cols-1 sm:grid-cols-2">
           <div className="card-glass p-4 sm:p-5">
             <p className="text-xs sm:text-sm font-semibold text-muted-foreground">
-              Всего в пулах
+              Total in Pools
             </p>
             <p className="mt-1.5 sm:mt-2 text-2xl sm:text-3xl font-bold text-accent">
               {currencySymbol}
@@ -201,14 +201,14 @@ export default function PoolsClient({
           <div className="card-glass p-4 sm:p-5 group">
             <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 smooth-transition rounded-2xl"></div>
             <p className="relative text-xs sm:text-sm font-semibold text-muted-foreground">
-              Свободные средства
+              Free Funds
             </p>
             <p className="relative mt-1.5 sm:mt-2 text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400">
               {currencySymbol}
               {freeBalance.toFixed(2)}
             </p>
             <p className="relative mt-1 sm:mt-2 text-xs sm:text-sm text-muted-foreground">
-              Доступно для распределения
+              Available for allocation
             </p>
           </div>
         </div>
@@ -223,7 +223,7 @@ export default function PoolsClient({
                 : "glass hover:shadow-md"
             }`}
           >
-            Активные ({activePools.length})
+            Active ({activePools.length})
           </button>
           <button
             onClick={() => setShowArchived(true)}
@@ -233,7 +233,7 @@ export default function PoolsClient({
                 : "glass hover:shadow-md"
             }`}
           >
-            Архивированные ({archivedPools.length})
+            Archived ({archivedPools.length})
           </button>
         </div>
 
@@ -245,9 +245,7 @@ export default function PoolsClient({
             {displayedPools.length === 0 ? (
               <div className="card-glass text-center py-12 sm:py-16">
                 <p className="text-sm sm:text-base text-muted-foreground">
-                  {showArchived
-                    ? "Нет архивированных пулов"
-                    : "Нет активных пулов"}
+                  {showArchived ? "No archived pools" : "No active pools"}
                 </p>
               </div>
             ) : (
@@ -265,9 +263,9 @@ export default function PoolsClient({
                         </h3>
                         <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm capitalize text-muted-foreground">
                           {pool.type === "free"
-                            ? "Свободные"
+                            ? "Free"
                             : pool.type === "custom"
-                              ? "Пользовательский"
+                              ? "Custom"
                               : pool.type}
                         </p>
                       </div>
@@ -289,7 +287,7 @@ export default function PoolsClient({
                             disabled={isLoading}
                             className="smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-lg active:scale-95 touch-target"
                           >
-                            Восстановить
+                            Restore
                           </button>
                           <button
                             onClick={() =>
@@ -298,13 +296,13 @@ export default function PoolsClient({
                             disabled={isLoading}
                             className="smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs bg-gradient-to-r from-red-500 to-red-600 text-white hover:shadow-lg active:scale-95 touch-target"
                           >
-                            Удалить
+                            Delete
                           </button>
                         </div>
                       ) : (
                         // Active pool actions
                         <div className="flex gap-2 sm:gap-3">
-                          {/* Кнопка управления распределением - только для не-free пулов */}
+                          {/* Allocation management button - only for non-free pools */}
                           {pool.type !== "free" && (
                             <button
                               onClick={() =>
@@ -317,7 +315,7 @@ export default function PoolsClient({
                               disabled={isLoading}
                               className="smooth-transition rounded-xl px-3 sm:px-6 py-2.5 sm:py-3 font-semibold text-xs sm:text-sm bg-gradient-to-r from-accent to-accent/80 text-white hover:shadow-lg active:scale-95 touch-target"
                             >
-                              Распределить
+                              Allocate
                             </button>
                           )}
                           {pool.type !== "free" && (
@@ -328,7 +326,7 @@ export default function PoolsClient({
                               disabled={isLoading}
                               className="smooth-transition rounded-xl px-3 sm:px-6 py-2.5 sm:py-3 font-semibold text-xs sm:text-sm glass hover:shadow-md text-foreground touch-target"
                             >
-                              Архив
+                              Archive
                             </button>
                           )}
                         </div>
@@ -349,18 +347,18 @@ export default function PoolsClient({
                 onClick={() => setIsCreating(true)}
                 className="glass-sm w-full smooth-transition rounded-2xl border-2 border-dashed border-accent/30 p-6 sm:p-8 text-center font-semibold text-xs sm:text-sm text-muted-foreground hover:border-accent hover:shadow-md touch-target"
               >
-                Создать новый пул
+                Create New Pool
               </button>
             ) : (
               <form onSubmit={handleCreatePool} className="card-glass">
                 <h3 className="mb-5 sm:mb-6 text-xl sm:text-2xl font-bold text-foreground">
-                  Новый пул денег
+                  New Money Pool
                 </h3>
                 <input
                   type="text"
                   value={newPoolName}
                   onChange={(e) => setNewPoolName(e.target.value)}
-                  placeholder="Например: Аренда, Сбережения"
+                  placeholder="e.g., Rent, Savings"
                   className="glass-sm mobile-input mb-5 sm:mb-6 w-full rounded-xl px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
                   autoFocus
                   disabled={isLoading}
@@ -371,7 +369,7 @@ export default function PoolsClient({
                     disabled={isLoading || !newPoolName.trim()}
                     className="flex-1 smooth-transition rounded-xl bg-gradient-to-r from-accent to-accent/80 px-4 py-2.5 sm:py-3 font-semibold text-sm sm:text-base text-white hover:shadow-lg active:scale-95 disabled:opacity-50 touch-target"
                   >
-                    {isLoading ? "Создание..." : "Создать"}
+                    {isLoading ? "Creating..." : "Create"}
                   </button>
                   <button
                     type="button"
@@ -382,7 +380,7 @@ export default function PoolsClient({
                     disabled={isLoading}
                     className="flex-1 smooth-transition rounded-xl glass hover:shadow-md text-foreground font-semibold text-sm sm:text-base touch-target"
                   >
-                    Отмена
+                    Cancel
                   </button>
                 </div>
               </form>

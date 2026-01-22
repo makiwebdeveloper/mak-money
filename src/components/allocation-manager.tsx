@@ -48,14 +48,14 @@ export default function AllocationManager({
     const difference = newAmount - currentAmount;
 
     if (newAmount < 0) {
-      alert("Сумма не может быть отрицательной");
+      alert("Amount cannot be negative");
       return;
     }
 
-    // Если увеличиваем сумму, проверяем свободные средства
+    // If increasing amount, check free funds
     if (difference > 0 && difference > freeBalance) {
       alert(
-        `Недостаточно свободных средств!\nДоступно: ${freeBalance.toFixed(2)}\nТребуется: ${difference.toFixed(2)}`,
+        `Insufficient free funds!\nAvailable: ${freeBalance.toFixed(2)}\nRequired: ${difference.toFixed(2)}`,
       );
       return;
     }
@@ -63,9 +63,9 @@ export default function AllocationManager({
     setIsLoading(true);
 
     try {
-      // Получаем первый счет (можно улучшить логику выбора счета)
+      // Get first account (can improve account selection logic)
       if (accounts.length === 0) {
-        alert("Сначала создайте счет");
+        alert("Create an account first");
         return;
       }
 
@@ -86,11 +86,11 @@ export default function AllocationManager({
         onClose();
       } else {
         const error = await response.json();
-        alert(`Ошибка: ${error.error}`);
+        alert(`Error: ${error.error}`);
       }
     } catch (error) {
       console.error("Error updating allocation:", error);
-      alert("Не удалось обновить распределение");
+      alert("Failed to update allocation");
     } finally {
       setIsLoading(false);
     }
@@ -109,9 +109,7 @@ export default function AllocationManager({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">
-            Распределить средства
-          </h2>
+          <h2 className="text-xl font-bold text-gray-900">Allocate Funds</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600"
@@ -137,10 +135,10 @@ export default function AllocationManager({
             📊 {poolName}
           </div>
           <div className="text-xs text-blue-700">
-            Текущая сумма: <strong>{currentAmount.toFixed(2)}</strong>
+            Current amount: <strong>{currentAmount.toFixed(2)}</strong>
           </div>
           <div className="text-xs text-blue-700">
-            Свободные средства: <strong>{freeBalance.toFixed(2)}</strong>
+            Free funds: <strong>{freeBalance.toFixed(2)}</strong>
           </div>
         </div>
 
@@ -150,7 +148,7 @@ export default function AllocationManager({
               htmlFor="amount"
               className="mb-2 block text-sm font-medium text-gray-700"
             >
-              Новая сумма в пуле
+              New amount in pool
             </label>
             <input
               id="amount"
@@ -164,7 +162,7 @@ export default function AllocationManager({
             />
           </div>
 
-          {/* Предпросмотр изменений */}
+          {/* Preview changes */}
           {difference !== 0 && (
             <div
               className={`rounded-lg p-3 ${
@@ -174,29 +172,29 @@ export default function AllocationManager({
               }`}
             >
               <div className="mb-1 text-sm font-medium">
-                {difference > 0 ? "📤 Из свободных" : "📥 В свободные"}:{" "}
+                {difference > 0 ? "📤 From free" : "📥 To free"}:{" "}
                 <strong>{Math.abs(difference).toFixed(2)}</strong>
               </div>
               <div className="text-xs opacity-75">
-                Свободных после операции:{" "}
+                Free after operation:{" "}
                 <strong>{newFreeBalance.toFixed(2)}</strong>
               </div>
               {newFreeBalance < 0 && (
                 <div className="mt-1 text-xs font-medium text-red-600">
-                  ⚠️ Недостаточно средств!
+                  ⚠️ Insufficient funds!
                 </div>
               )}
             </div>
           )}
 
-          {/* Быстрые кнопки */}
+          {/* Quick buttons */}
           <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
               onClick={() => setAmount("0.00")}
               className="rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
             >
-              Очистить
+              Clear
             </button>
             <button
               type="button"
@@ -205,7 +203,7 @@ export default function AllocationManager({
               }
               className="rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
             >
-              Все
+              All
             </button>
             <button
               type="button"
@@ -218,7 +216,7 @@ export default function AllocationManager({
             </button>
           </div>
 
-          {/* Кнопки действий */}
+          {/* Action buttons */}
           <div className="flex gap-3 pt-2">
             <button
               type="button"
@@ -226,14 +224,14 @@ export default function AllocationManager({
               className={buttonStyles.secondary + " flex-1"}
               disabled={isLoading}
             >
-              Отмена
+              Cancel
             </button>
             <button
               type="submit"
               className={buttonStyles.primary + " flex-1"}
               disabled={isLoading || newFreeBalance < 0}
             >
-              {isLoading ? "Сохранение..." : "Сохранить"}
+              {isLoading ? "Saving..." : "Save"}
             </button>
           </div>
         </form>

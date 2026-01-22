@@ -64,22 +64,22 @@ export default function QuickTransactionModal({
     const amountValue = Number(amount);
 
     if (!amount || amountValue <= 0) {
-      alert("Введите корректную сумму");
+      alert("Please enter a valid amount");
       return;
     }
 
     if (!accountId) {
-      alert("Выберите счет");
+      alert("Please select an account");
       return;
     }
 
-    // Проверка свободных средств для расхода
+    // Check free funds for expenses
     if (type === "expense" && amountValue > freeBalance) {
       const shouldContinue = confirm(
-        `⚠️ Недостаточно свободных средств!\n\n` +
-          `Доступно: ${freeBalance.toFixed(2)}\n` +
-          `Требуется: ${amountValue.toFixed(2)}\n\n` +
-          `Переместите деньги из пулов в "Свободные" или продолжите на свой риск.`,
+        `⚠️ Insufficient free funds!\n\n` +
+          `Available: ${freeBalance.toFixed(2)}\n` +
+          `Required: ${amountValue.toFixed(2)}\n\n` +
+          `Move money from pools to "Free" or continue at your own risk.`,
       );
       if (!shouldContinue) return;
     }
@@ -110,11 +110,11 @@ export default function QuickTransactionModal({
         window.location.reload();
       } else {
         const error = await response.json();
-        alert(`Ошибка: ${error.error}`);
+        alert(`Error: ${error.error}`);
       }
     } catch (error) {
       console.error("Error creating transaction:", error);
-      alert("Не удалось создать транзакцию");
+      alert("Failed to create transaction");
     } finally {
       setIsLoading(false);
     }
@@ -133,7 +133,7 @@ export default function QuickTransactionModal({
       >
         <div className="mb-4 sm:mb-6 flex items-center justify-between gap-2">
           <h2 className="text-lg sm:text-2xl font-bold bg-linear-to-r from-foreground to-accent bg-clip-text text-transparent">
-            Быстрая транзакция
+            Quick Transaction
           </h2>
           <button
             onClick={onClose}
@@ -158,7 +158,7 @@ export default function QuickTransactionModal({
         {type === "expense" && freeBalance >= 0 && (
           <div className="glass mb-4 sm:mb-5 rounded-lg p-2 sm:p-3 border border-accent/20">
             <p className="text-xs text-foreground">
-              Свободные:{" "}
+              Free:{" "}
               <span className="font-bold text-accent text-sm">
                 {freeBalance.toFixed(2)}
               </span>
@@ -167,10 +167,10 @@ export default function QuickTransactionModal({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
-          {/* Тип транзакции */}
+          {/* Transaction Type */}
           <div>
             <label className="mb-2 block text-xs font-semibold text-foreground">
-              Тип
+              Type
             </label>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -182,7 +182,7 @@ export default function QuickTransactionModal({
                     : "glass hover:shadow-md"
                 }`}
               >
-                Доход
+                Income
               </button>
               <button
                 type="button"
@@ -193,18 +193,18 @@ export default function QuickTransactionModal({
                     : "glass hover:shadow-md"
                 }`}
               >
-                Расход
+                Expense
               </button>
             </div>
           </div>
 
-          {/* Сумма */}
+          {/* Amount */}
           <div>
             <label
               htmlFor="amount"
               className="mb-1.5 block text-xs font-semibold text-foreground"
             >
-              Сумма *
+              Amount *
             </label>
             <input
               id="amount"
@@ -218,13 +218,13 @@ export default function QuickTransactionModal({
             />
           </div>
 
-          {/* Счет */}
+          {/* Account */}
           <div>
             <label
               htmlFor="account"
               className="mb-1.5 block text-xs font-semibold text-foreground"
             >
-              Счет *
+              Account *
             </label>
             <select
               id="account"
@@ -233,7 +233,7 @@ export default function QuickTransactionModal({
               className="glass-sm mobile-input w-full rounded-lg px-3 py-2 sm:py-2.5 text-sm sm:text-base text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
               required
             >
-              <option value="">Выберите счет</option>
+              <option value="">Select account</option>
               {accounts.map((account) => (
                 <option key={account.id} value={account.id}>
                   {account.name} ({account.balance} {account.currency})
@@ -242,13 +242,13 @@ export default function QuickTransactionModal({
             </select>
           </div>
 
-          {/* Категория */}
+          {/* Category */}
           <div>
             <label
               htmlFor="category"
               className="mb-1.5 block text-xs font-semibold text-foreground"
             >
-              Категория
+              Category
             </label>
             <input
               id="category"
@@ -256,17 +256,17 @@ export default function QuickTransactionModal({
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="glass-sm mobile-input w-full rounded-lg px-3 py-2 sm:py-2.5 text-sm sm:text-base text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
-              placeholder="Еда, транспорт..."
+              placeholder="Food, transport..."
             />
           </div>
 
-          {/* Описание */}
+          {/* Description */}
           <div>
             <label
               htmlFor="description"
               className="mb-1.5 block text-xs font-semibold text-foreground"
             >
-              Описание
+              Description
             </label>
             <input
               id="description"
@@ -274,11 +274,11 @@ export default function QuickTransactionModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="glass-sm mobile-input w-full rounded-lg px-3 py-2 sm:py-2.5 text-sm sm:text-base text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
-              placeholder="Опционально"
+              placeholder="Optional"
             />
           </div>
 
-          {/* Кнопки */}
+          {/* Buttons */}
           <div className="flex gap-2 pt-3 sm:pt-4">
             <button
               type="button"
@@ -286,14 +286,14 @@ export default function QuickTransactionModal({
               className="flex-1 smooth-transition rounded-lg bg-white/50 dark:bg-white/8 px-3 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm text-foreground hover:shadow-lg active:scale-95 disabled:opacity-50"
               disabled={isLoading}
             >
-              Отмена
+              Cancel
             </button>
             <button
               type="submit"
               className="flex-1 smooth-transition rounded-lg bg-linear-to-r from-accent to-accent/80 px-3 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm text-white hover:shadow-lg active:scale-95 disabled:opacity-50"
               disabled={isLoading}
             >
-              {isLoading ? "Создание..." : "Добавить"}
+              {isLoading ? "Creating..." : "Add"}
             </button>
           </div>
         </form>

@@ -52,7 +52,7 @@ BEGIN
     INSERT INTO public.money_pools (user_id, name, type, color, icon)
     VALUES (
         NEW.id,
-        'Свободные',
+        'Free',
         'free',
         '#10b981',
         'coins'

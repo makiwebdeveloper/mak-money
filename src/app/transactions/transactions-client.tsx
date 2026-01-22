@@ -136,10 +136,10 @@ export default function TransactionsClient({
         <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-foreground via-accent to-foreground bg-clip-text text-transparent mb-1 sm:mb-2">
-              Транзакции
+              Transactions
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground">
-              Просмотр и добавление операций
+              View and add operations
             </p>
           </div>
           <button
@@ -150,7 +150,7 @@ export default function TransactionsClient({
                 : "bg-gradient-to-r from-accent to-accent/80 text-white hover:shadow-lg active:scale-95"
             }`}
           >
-            {isCreating ? "Отмена" : "Новая транзакция"}
+            {isCreating ? "Cancel" : "New Transaction"}
           </button>
         </div>
 
@@ -158,13 +158,13 @@ export default function TransactionsClient({
         {isCreating && (
           <div className="card-glass mb-8">
             <h2 className="mb-3 sm:mb-4 text-lg sm:text-2xl font-bold text-foreground">
-              Новая транзакция
+              New Transaction
             </h2>
             <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
               {/* Transaction Type */}
               <div>
                 <label className="mb-2 sm:mb-3 block text-xs sm:text-sm font-semibold text-foreground">
-                  Тип
+                  Type
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
@@ -176,7 +176,7 @@ export default function TransactionsClient({
                         : "glass hover:shadow-md"
                     }`}
                   >
-                    Доход
+                    Income
                   </button>
                   <button
                     type="button"
@@ -187,7 +187,7 @@ export default function TransactionsClient({
                         : "glass hover:shadow-md"
                     }`}
                   >
-                    Расход
+                    Expense
                   </button>
                   <button
                     type="button"
@@ -198,7 +198,7 @@ export default function TransactionsClient({
                         : "glass hover:shadow-md"
                     }`}
                   >
-                    Перевод
+                    Transfer
                   </button>
                 </div>
               </div>
@@ -206,7 +206,7 @@ export default function TransactionsClient({
               {/* Amount */}
               <div>
                 <label className="mb-2 sm:mb-3 block text-xs sm:text-sm font-semibold text-foreground">
-                  Сумма
+                  Amount
                 </label>
                 <input
                   type="number"
@@ -224,7 +224,7 @@ export default function TransactionsClient({
                 <>
                   <div>
                     <label className="mb-2 sm:mb-3 block text-xs sm:text-sm font-semibold text-foreground">
-                      Со счета
+                      From Account
                     </label>
                     <select
                       value={fromAccountId}
@@ -232,7 +232,7 @@ export default function TransactionsClient({
                       className="glass-sm mobile-input w-full rounded-lg sm:rounded-xl px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
                       required
                     >
-                      <option value="">Выберите счет</option>
+                      <option value="">Select account</option>
                       {accounts.map((account) => (
                         <option key={account.id} value={account.id}>
                           {account.name} ({account.currency}{" "}
@@ -243,7 +243,7 @@ export default function TransactionsClient({
                   </div>
                   <div>
                     <label className="mb-2 sm:mb-3 block text-xs sm:text-sm font-semibold text-foreground">
-                      На счет
+                      To Account
                     </label>
                     <select
                       value={toAccountId}
@@ -251,7 +251,7 @@ export default function TransactionsClient({
                       className="glass-sm mobile-input w-full rounded-lg sm:rounded-xl px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
                       required
                     >
-                      <option value="">Выберите счет</option>
+                      <option value="">Select account</option>
                       {accounts.map((account) => (
                         <option key={account.id} value={account.id}>
                           {account.name} ({account.currency}{" "}
@@ -264,7 +264,7 @@ export default function TransactionsClient({
               ) : (
                 <div>
                   <label className="mb-2 sm:mb-3 block text-xs sm:text-sm font-semibold text-foreground">
-                    Счет
+                    Account
                   </label>
                   <select
                     value={accountId}
@@ -272,7 +272,7 @@ export default function TransactionsClient({
                     className="glass-sm mobile-input w-full rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
                     required
                   >
-                    <option value="">Выберите счет</option>
+                    <option value="">Select account</option>
                     {accounts.map((account) => (
                       <option key={account.id} value={account.id}>
                         {account.name} ({account.currency}{" "}
@@ -286,27 +286,27 @@ export default function TransactionsClient({
               {/* Category (optional) */}
               <div>
                 <label className="mb-2 sm:mb-3 block text-xs sm:text-sm font-semibold text-foreground">
-                  Категория
+                  Category
                 </label>
                 <input
                   type="text"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   className="glass-sm mobile-input w-full rounded-xl px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
-                  placeholder="Зарплата, Продукты..."
+                  placeholder="Salary, Groceries..."
                 />
               </div>
 
               {/* Description (optional) */}
               <div>
                 <label className="mb-2 sm:mb-3 block text-xs sm:text-sm font-semibold text-foreground">
-                  Описание
+                  Description
                 </label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="glass-sm mobile-input w-full rounded-xl px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
-                  placeholder="Добавьте заметки..."
+                  placeholder="Add notes..."
                   rows={2}
                 ></textarea>
               </div>
@@ -317,7 +317,7 @@ export default function TransactionsClient({
                 disabled={isLoading}
                 className="w-full smooth-transition rounded-xl bg-gradient-to-r from-accent to-accent/80 px-4 py-2.5 sm:py-3 font-semibold text-sm sm:text-base text-white hover:shadow-lg active:scale-95 disabled:opacity-50 touch-target"
               >
-                {isLoading ? "Создание..." : "Создать транзакцию"}
+                {isLoading ? "Creating..." : "Create Transaction"}
               </button>
             </form>
           </div>
@@ -326,10 +326,10 @@ export default function TransactionsClient({
         {accounts.length === 0 && (
           <div className="glass border-l-4 border-accent rounded-xl p-3 sm:p-4 mb-6">
             <p className="text-foreground font-semibold text-sm sm:text-base">
-              ⚠️ Сначала создайте счет
+              ⚠️ Create an account first
             </p>
             <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
-              Перейдите на страницу счетов, чтобы добавить ваш первый счет.
+              Go to accounts page to add your first account.
             </p>
           </div>
         )}
@@ -339,7 +339,7 @@ export default function TransactionsClient({
           <TransactionsSkeleton />
         ) : transactions.length === 0 ? (
           <div className="card-glass py-12 sm:py-16 text-center text-xs sm:text-base text-muted-foreground">
-            Транзакций еще нет
+            No transactions yet
           </div>
         ) : (
           <div className="card-glass overflow-hidden">
@@ -348,19 +348,19 @@ export default function TransactionsClient({
                 <thead className="bg-gradient-to-r from-primary/10 to-accent/10 border-b border-white/20">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-bold uppercase text-foreground">
-                      Дата
+                      Date
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-bold uppercase text-foreground">
-                      Тип
+                      Type
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-bold uppercase text-foreground">
-                      Сумма
+                      Amount
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-bold uppercase text-foreground">
-                      Категория
+                      Category
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-bold uppercase text-foreground">
-                      Описание
+                      Description
                     </th>
                   </tr>
                 </thead>
@@ -378,10 +378,10 @@ export default function TransactionsClient({
                           className={`capitalize font-semibold ${getTransactionColor(transaction.type)}`}
                         >
                           {transaction.type === "income"
-                            ? "✅ Доход"
+                            ? "✅ Income"
                             : transaction.type === "expense"
-                              ? "❌ Расход"
-                              : "→ Перевод"}
+                              ? "❌ Expense"
+                              : "→ Transfer"}
                         </span>
                       </td>
                       <td

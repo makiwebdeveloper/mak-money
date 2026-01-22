@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const navItems = [
-  { href: "/", label: "Главная" },
-  { href: "/accounts", label: "Счета" },
-  { href: "/pools", label: "Пулы" },
-  { href: "/transactions", label: "Транзакции" },
+  { href: "/", label: "Home" },
+  { href: "/accounts", label: "Accounts" },
+  { href: "/pools", label: "Pools" },
+  { href: "/transactions", label: "Transactions" },
 ];
 
 export function Navigation() {
@@ -56,7 +56,7 @@ export function Navigation() {
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
                 className="smooth-transition rounded-full w-10 h-10 flex items-center justify-center bg-gradient-to-r from-accent to-accent/80 text-white shadow-md hover:shadow-lg"
-                title="Профиль"
+                title="Profile"
               >
                 <svg
                   className="w-5 h-5"
@@ -73,7 +73,7 @@ export function Navigation() {
                       type="submit"
                       className="w-full text-left px-4 py-3 text-sm font-medium text-foreground hover:bg-white/30 dark:hover:bg-white/10 smooth-transition rounded-lg m-1"
                     >
-                      Выйти
+                      Sign Out
                     </button>
                   </form>
                 </div>

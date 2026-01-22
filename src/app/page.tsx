@@ -19,24 +19,24 @@ export default async function Home() {
     .eq("id", user.id)
     .single();
 
-  // Получаем все счета
+  // Get all accounts
   const { data: accounts } = await supabase
     .from("accounts")
     .select("*")
     .eq("user_id", user.id)
     .order("created_at", { ascending: true });
 
-  // Вычисляем общий баланс
+  // Calculate total balance
   const totalBalance =
     accounts?.reduce((sum, acc) => sum + Number(acc.balance), 0) || 0;
   const currency = profile?.default_currency || "USD";
 
-  // Получаем баланс свободных средств
+  // Get free funds balance
   const { data: freePool } = await supabase
     .from("money_pools")
     .select("id")
     .eq("user_id", user.id)
-    .eq("name", "Свободные")
+    .eq("name", "Free")
     .single();
 
   let freeBalance = 0;
@@ -48,7 +48,7 @@ export default async function Home() {
     freeBalance = Number(balanceData) || 0;
   }
 
-  // Получаем последние 5 транзакций
+  // Get last 5 transactions
   const { data: recentTransactions } = await supabase
     .from("transactions")
     .select("*, accounts!transactions_account_id_fkey(name)")
@@ -60,25 +60,25 @@ export default async function Home() {
   return (
     <div className="min-h-screen bg-linear-to-br from-background to-background/95 pt-28 md:pt-0 pb-24 md:pb-0">
       <div className="mx-auto max-w-7xl px-3 sm:px-4 py-6 sm:py-12 lg:px-8">
-        {/* Заголовок */}
+        {/* Header */}
         <div className="mb-6 sm:mb-12">
           <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold bg-linear-to-r from-foreground via-accent to-foreground bg-clip-text text-transparent mb-1 sm:mb-2">
-            Добро пожаловать, {profile?.name || user.email}
+            Welcome, {profile?.name || user.email}
           </h1>
           <p className="text-xs sm:text-lg text-muted-foreground">
-            Основная валюта:{" "}
+            Main currency:{" "}
             <span className="font-semibold text-accent">{currency}</span>
           </p>
         </div>
 
-        {/* Балансы - moderne glassmorphism cards */}
+        {/* Balances - modern glassmorphism cards */}
         <div className="mb-5 sm:mb-8 grid gap-3 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {/* Общий баланс */}
+          {/* Total Balance */}
           <div className="card-glass group relative overflow-hidden p-3 sm:p-4">
             <div className="absolute inset-0 bg-linear-to-br from-blue-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 smooth-transition"></div>
             <div className="relative">
               <div className="mb-2 text-xs font-semibold text-muted-foreground">
-                Общий баланс
+                Total Balance
               </div>
               <div className="text-xl sm:text-3xl lg:text-4xl font-bold text-foreground">
                 {totalBalance.toFixed(2)}{" "}
@@ -88,39 +88,33 @@ export default async function Home() {
               </div>
               <div className="mt-2 sm:mt-4 text-xs text-muted-foreground">
                 {accounts?.length || 0}{" "}
-                {accounts?.length === 1
-                  ? "счет"
-                  : accounts?.length === 2 ||
-                      accounts?.length === 3 ||
-                      accounts?.length === 4
-                    ? "счета"
-                    : "счетов"}
+                {accounts?.length === 1 ? "account" : "accounts"}
               </div>
             </div>
           </div>
 
-          {/* Свободные средства */}
+          {/* Free Funds */}
           <div className="card-glass group relative overflow-hidden p-3 sm:p-4">
             <div className="absolute inset-0 bg-linear-to-br from-green-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 smooth-transition"></div>
             <div className="relative">
               <div className="mb-2 text-xs font-semibold text-muted-foreground">
-                Свободные средства
+                Free Funds
               </div>
               <div className="text-xl sm:text-3xl lg:text-4xl font-bold bg-linear-to-r from-foreground to-accent bg-clip-text text-transparent">
                 {freeBalance.toFixed(2)}
               </div>
               <div className="mt-3 sm:mt-4 text-xs sm:text-sm text-muted-foreground">
-                Доступно для расходов
+                Available for expenses
               </div>
             </div>
           </div>
 
-          {/* Распределено */}
+          {/* Allocated */}
           <div className="card-glass group relative overflow-hidden sm:col-span-2 lg:col-span-1">
             <div className="absolute inset-0 bg-gradient-to-br from-accent/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 smooth-transition"></div>
             <div className="relative">
               <div className="mb-2 sm:mb-3 text-xs sm:text-sm font-semibold text-muted-foreground">
-                Распределено в пулах
+                Allocated in Pools
               </div>
               <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-accent">
                 {(totalBalance - freeBalance).toFixed(2)}
@@ -129,24 +123,24 @@ export default async function Home() {
                 {Math.round(
                   ((totalBalance - freeBalance) / (totalBalance || 1)) * 100,
                 )}
-                % от всего
+                % of total
               </div>
             </div>
           </div>
         </div>
 
-        {/* Последние транзакции */}
+        {/* Recent Transactions */}
         {recentTransactions && recentTransactions.length > 0 && (
           <div className="card-glass mb-6 sm:mb-8">
             <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
               <h2 className="text-xl sm:text-2xl font-bold text-foreground">
-                Последние транзакции
+                Recent Transactions
               </h2>
               <Link
                 href="/transactions"
                 className="smooth-transition text-sm font-semibold text-accent hover:text-accent/80"
               >
-                Смотреть все →
+                View All →
               </Link>
             </div>
             <div className="space-y-3 sm:space-y-4">
@@ -173,7 +167,7 @@ export default async function Home() {
                     </div>
                     <div className="min-w-0">
                       <div className="font-semibold text-foreground text-sm sm:text-base truncate">
-                        {tx.category || "Без категории"}
+                        {tx.category || "No category"}
                       </div>
                       <div className="text-xs sm:text-sm text-muted-foreground truncate">
                         {tx.accounts?.name} •{" "}
@@ -205,10 +199,10 @@ export default async function Home() {
           </div>
         )}
 
-        {/* Быстрые действия */}
+        {/* Quick Actions */}
         <div>
           <h2 className="mb-6 text-xl sm:text-2xl font-bold text-foreground">
-            Быстрые действия
+            Quick Actions
           </h2>
 
           <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -217,10 +211,10 @@ export default async function Home() {
               className="card-glass group flex flex-col p-4 sm:p-5 min-h-24 sm:min-h-28"
             >
               <h3 className="text-base sm:text-lg font-bold text-foreground group-hover:text-accent smooth-transition">
-                Пулы денег
+                Money Pools
               </h3>
               <p className="mt-2 text-xs sm:text-sm text-muted-foreground line-clamp-2">
-                Распределение средств по целям
+                Allocate funds by goals
               </p>
             </Link>
 
@@ -229,10 +223,10 @@ export default async function Home() {
               className="card-glass group flex flex-col p-4 sm:p-5 min-h-24 sm:min-h-28"
             >
               <h3 className="text-base sm:text-lg font-bold text-foreground group-hover:text-accent smooth-transition">
-                Счета
+                Accounts
               </h3>
               <p className="mt-2 text-xs sm:text-sm text-muted-foreground line-clamp-2">
-                Управление счетами и мониторинг
+                Manage accounts and monitoring
               </p>
             </Link>
 
@@ -241,10 +235,10 @@ export default async function Home() {
               className="card-glass group flex flex-col p-4 sm:p-5 min-h-24 sm:min-h-28"
             >
               <h3 className="text-base sm:text-lg font-bold text-foreground group-hover:text-accent smooth-transition">
-                Транзакции
+                Transactions
               </h3>
               <p className="mt-2 text-xs sm:text-sm text-muted-foreground line-clamp-2">
-                История операций
+                Operations history
               </p>
             </Link>
           </div>

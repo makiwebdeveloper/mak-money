@@ -1,7 +1,7 @@
 import { CurrencyCode } from "./currencies";
 
-// Статические курсы валют (MVP допущение)
-// В будущем можно заменить на API с актуальными курсами
+// Static exchange rates (MVP assumption)
+// Can be replaced with API for actual rates in the future
 const EXCHANGE_RATES: Record<CurrencyCode, number> = {
   USD: 1.0,
   EUR: 0.92,
@@ -16,7 +16,7 @@ export function convertCurrency(
 ): number {
   if (from === to) return amount;
 
-  // Конвертируем через USD как базовую валюту
+  // Convert through USD as base currency
   const amountInUSD = amount / EXCHANGE_RATES[from];
   const amountInTargetCurrency = amountInUSD * EXCHANGE_RATES[to];
 

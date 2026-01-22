@@ -13,12 +13,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Получаем пул "Свободные"
+    // Get the "Free" pool
     const { data: freePool, error: poolError } = await supabase
       .from("money_pools")
       .select("id, name")
       .eq("user_id", user.id)
-      .eq("name", "Свободные")
+      .eq("name", "Free")
       .single();
 
     if (poolError || !freePool) {
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Вызываем функцию для расчета баланса пула
+    // Call function to calculate pool balance
     const { data: balanceData, error: balanceError } = await supabase.rpc(
       "get_pool_balance",
       {

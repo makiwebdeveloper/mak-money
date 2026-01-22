@@ -15,7 +15,7 @@ async function AccountsContent() {
     redirect("/auth");
   }
 
-  // Загружаем все счета (активные и архивные) на сервере (SSR)
+  // Load all accounts (active and archived) on server (SSR)
   const { data: accounts } = await supabase
     .from("accounts")
     .select("*")

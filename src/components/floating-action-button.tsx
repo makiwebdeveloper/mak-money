@@ -18,7 +18,7 @@ export default function FloatingActionButton() {
       <button
         onClick={() => setIsModalOpen(true)}
         className={`fixed bottom-6 right-3 sm:bottom-8 sm:right-8 z-40 flex h-12 sm:h-16 w-12 sm:w-16 items-center justify-center rounded-full bg-linear-to-br from-accent to-accent/80 text-white shadow-lg sm:shadow-2xl transition-all duration-300 hover:shadow-lg hover:-translate-y-1 active:scale-95 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:ring-offset-2 dark:focus:ring-offset-primary hover:scale-110 backdrop-blur-md ${isModalOpen ? "opacity-0 pointer-events-none" : "opacity-100"}`}
-        aria-label="Добавить транзакцию"
+        aria-label="Add transaction"
       >
         <svg
           className="h-5 sm:h-8 w-5 sm:w-8"
