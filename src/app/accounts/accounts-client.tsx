@@ -95,14 +95,14 @@ export default function AccountsClient({
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-background/95 pt-32 md:pt-0 pb-24 md:pb-0">
+    <div className="min-h-screen bg-gradient-to-br from-background to-background/95 pt-12 md:pt-0 pb-24 md:pb-0">
       <div className="mx-auto max-w-4xl px-3 sm:px-4 py-6 sm:py-12 lg:px-8">
         {/* Header */}
-        <div className="mb-6 sm:mb-8">
+        {/* <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
             Accounts
           </h1>
-        </div>
+        </div> */}
 
         {/* Create Form or Accounts List */}
         {isCreating ? (

@@ -2,18 +2,48 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const navItems = [
-  { href: "/", label: "Home" },
-  { href: "/accounts", label: "Accounts" },
-  { href: "/pools", label: "Pools" },
-  { href: "/transactions", label: "Transactions" },
+  { href: "/", label: "Home", index: 0 },
+  { href: "/accounts", label: "Accounts", index: 1 },
+  { href: "/pools", label: "Pools", index: 2 },
+  { href: "/transactions", label: "Transactions", index: 3 },
 ];
 
 export function Navigation() {
   const pathname = usePathname();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Update current index based on pathname
+  useEffect(() => {
+    const item = navItems.find((item) => item.href === pathname);
+    if (item) {
+      setCurrentIndex(item.index);
+    }
+  }, [pathname]);
+
+  // Listen for swipe index changes
+  useEffect(() => {
+    const handleSwipeChange = (e: CustomEvent) => {
+      setCurrentIndex(e.detail.index);
+    };
+
+    window.addEventListener("swipeIndexChange" as any, handleSwipeChange);
+    return () => {
+      window.removeEventListener("swipeIndexChange" as any, handleSwipeChange);
+    };
+  }, []);
+
+  // Handle mobile navigation click
+  const handleMobileNavClick = (e: React.MouseEvent, index: number) => {
+    e.preventDefault();
+    // Dispatch event to trigger swipe
+    window.dispatchEvent(
+      new CustomEvent("navigateToSection", { detail: { index } }),
+    );
+  };
 
   // Don't show navigation on auth pages
   if (pathname.startsWith("/auth") || pathname === "/onboarding") {
@@ -83,23 +113,35 @@ export function Navigation() {
         </div>
 
         {/* Mobile Bottom Navigation */}
-        <div className="md:hidden grid grid-cols-4 gap-1 pb-2 pt-2 border-t border-white/10">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`smooth-transition rounded-lg px-2 py-2 text-xs font-semibold text-center ${
-                  isActive
-                    ? "bg-gradient-to-r from-accent to-accent/80 text-white shadow-md"
-                    : "text-foreground hover:bg-white/20 dark:hover:bg-white/10"
-                }`}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
+        <div className="md:hidden relative pb-2 pt-2 border-t border-white/10">
+          {/* Animated background indicator */}
+          <div
+            className="absolute top-2 h-[calc(100%-1rem)] bg-linear-to-r from-accent to-accent/80 rounded-lg shadow-md transition-all duration-300 ease-out"
+            style={{
+              width: `calc(25% - 2px)`,
+              left: `calc(${currentIndex * 25}% + 1px)`,
+            }}
+          />
+
+          {/* Navigation buttons */}
+          <div className="relative grid grid-cols-4 gap-1">
+            {navItems.map((item) => {
+              const isActive = currentIndex === item.index;
+              return (
+                <button
+                  key={item.href}
+                  onClick={(e) => handleMobileNavClick(e, item.index)}
+                  className={`rounded-lg px-2 py-2 text-xs font-semibold text-center transition-colors duration-300 ${
+                    isActive
+                      ? "text-white"
+                      : "text-foreground hover:bg-white/20 dark:hover:bg-white/10"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </nav>

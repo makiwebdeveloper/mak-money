@@ -254,4 +254,17 @@
       font-size: 14px !important;
     }
   }
+
+  /* Hide scrollbar for swipeable layout */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari and Opera */
+  }
 }

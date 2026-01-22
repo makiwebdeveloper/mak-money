@@ -122,13 +122,13 @@ export default function TransactionsClient({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-background/95 pt-32 md:pt-0 pb-24 md:pb-0">
+    <div className="min-h-screen bg-gradient-to-br from-background to-background/95 pt-12 md:pt-0 pb-24 md:pb-0">
       <div className="mx-auto max-w-4xl px-3 sm:px-4 py-6 sm:py-12 lg:px-8">
         {/* Header */}
         <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
+          {/* <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
             Transactions
-          </h1>
+          </h1> */}
           <button
             onClick={() => setIsCreating((v) => !v)}
             className={`smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-6 py-2 sm:py-2.5 font-semibold whitespace-nowrap text-xs sm:text-sm touch-target ${
