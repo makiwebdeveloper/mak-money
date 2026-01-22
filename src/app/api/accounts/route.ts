@@ -30,7 +30,6 @@ export async function GET() {
       .from("accounts")
       .select("*")
       .eq("user_id", user.id)
-      .eq("is_active", true)
       .order("created_at", { ascending: true });
 
     if (error) {

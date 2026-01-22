@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { buttonStyles, inputStyles } from "@/lib/styles/components";
+import { useAccounts } from "@/lib/hooks/useAccounts";
+import { useTransferAllocation } from "@/lib/hooks/usePools";
 
 interface AllocationManagerProps {
   poolId: string;
@@ -21,28 +23,12 @@ export default function AllocationManager({
   onSuccess,
 }: AllocationManagerProps) {
   const [amount, setAmount] = useState(currentAmount.toFixed(2));
-  const [isLoading, setIsLoading] = useState(false);
-  const [accounts, setAccounts] = useState<any[]>([]);
-
-  useEffect(() => {
-    fetchAccounts();
-  }, []);
-
-  const fetchAccounts = async () => {
-    try {
-      const response = await fetch("/api/accounts");
-      if (response.ok) {
-        const data = await response.json();
-        setAccounts(data.accounts || []);
-      }
-    } catch (error) {
-      console.error("Error fetching accounts:", error);
-    }
-  };
+  const { data: accounts = [] } = useAccounts();
+  const transferAllocation = useTransferAllocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLoading) return;
+    if (transferAllocation.isPending) return;
 
     const newAmount = Number(amount);
     const difference = newAmount - currentAmount;
@@ -60,8 +46,6 @@ export default function AllocationManager({
       return;
     }
 
-    setIsLoading(true);
-
     try {
       // Get first account (can improve account selection logic)
       if (accounts.length === 0) {
@@ -71,28 +55,17 @@ export default function AllocationManager({
 
       const account = accounts[0];
 
-      const response = await fetch("/api/allocations/transfer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          account_id: account.id,
-          pool_id: poolId,
-          new_amount: newAmount,
-        }),
+      await transferAllocation.mutateAsync({
+        account_id: account.id,
+        pool_id: poolId,
+        new_amount: newAmount,
       });
 
-      if (response.ok) {
-        onSuccess();
-        onClose();
-      } else {
-        const error = await response.json();
-        alert(`Error: ${error.error}`);
-      }
-    } catch (error) {
+      onSuccess();
+      onClose();
+    } catch (error: any) {
       console.error("Error updating allocation:", error);
-      alert("Failed to update allocation");
-    } finally {
-      setIsLoading(false);
+      alert(`Error: ${error.message || "Failed to update allocation"}`);
     }
   };
 
@@ -222,16 +195,16 @@ export default function AllocationManager({
               type="button"
               onClick={onClose}
               className={buttonStyles.secondary + " flex-1"}
-              disabled={isLoading}
+              disabled={transferAllocation.isPending}
             >
               Cancel
             </button>
             <button
               type="submit"
               className={buttonStyles.primary + " flex-1"}
-              disabled={isLoading || newFreeBalance < 0}
+              disabled={transferAllocation.isPending || newFreeBalance < 0}
             >
-              {isLoading ? "Saving..." : "Save"}
+              {transferAllocation.isPending ? "Saving..." : "Save"}
             </button>
           </div>
         </form>

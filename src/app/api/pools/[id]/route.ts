@@ -67,7 +67,7 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/pools/[id] - Archive pool (soft delete)
+// DELETE /api/pools/[id] - Permanently delete pool
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -104,23 +104,40 @@ export async function DELETE(
       );
     }
 
-    // Archive pool (soft delete)
+    // First, delete all allocations related to this pool
+    const { error: deleteAllocError } = await supabase
+      .from("allocations")
+      .delete()
+      .eq("pool_id", id);
+
+    if (deleteAllocError) {
+      console.error("Error deleting allocations:", deleteAllocError);
+      return NextResponse.json(
+        { error: deleteAllocError.message },
+        { status: 500 },
+      );
+    }
+
+    // Then, permanently delete the pool
     const { error } = await supabase
       .from("money_pools")
-      .update({ is_active: false })
+      .delete()
       .eq("id", id)
       .eq("user_id", user.id);
 
     if (error) {
-      console.error("Error archiving pool:", error);
+      console.error("Error permanently deleting pool:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ message: "Pool permanently deleted" });
   } catch (error) {
     console.error("Error in pools DELETE:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 },
     );
   }

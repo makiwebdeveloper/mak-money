@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { Database } from "@/lib/types/database";
+import { useAccounts } from "@/lib/hooks/useAccounts";
+import { useCreateTransaction } from "@/lib/hooks/useTransactions";
+import { useFreeBalance } from "@/lib/hooks/usePools";
 
 type Account = Database["public"]["Tables"]["accounts"]["Row"];
 
@@ -19,47 +22,20 @@ export default function QuickTransactionModal({
   const [accountId, setAccountId] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [freeBalance, setFreeBalance] = useState<number>(0);
+
+  const { data: accounts = [] } = useAccounts();
+  const { data: freeBalance = 0 } = useFreeBalance();
+  const createTransaction = useCreateTransaction();
 
   useEffect(() => {
-    if (isOpen) {
-      fetchAccounts();
-      fetchFreeBalance();
+    if (isOpen && accounts.length > 0 && !accountId) {
+      setAccountId(accounts[0].id);
     }
-  }, [isOpen]);
-
-  const fetchAccounts = async () => {
-    try {
-      const response = await fetch("/api/accounts");
-      if (response.ok) {
-        const data = await response.json();
-        setAccounts(data.accounts);
-        if (data.accounts.length > 0) {
-          setAccountId(data.accounts[0].id);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching accounts:", error);
-    }
-  };
-
-  const fetchFreeBalance = async () => {
-    try {
-      const response = await fetch("/api/pools/balance");
-      if (response.ok) {
-        const data = await response.json();
-        setFreeBalance(data.freeBalance);
-      }
-    } catch (error) {
-      console.error("Error fetching free balance:", error);
-    }
-  };
+  }, [isOpen, accounts, accountId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLoading) return;
+    if (createTransaction.isPending) return;
 
     const amountValue = Number(amount);
 
@@ -84,39 +60,25 @@ export default function QuickTransactionModal({
       if (!shouldContinue) return;
     }
 
-    setIsLoading(true);
-
     try {
       const selectedAccount = accounts.find((a) => a.id === accountId);
 
-      const response = await fetch("/api/transactions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type,
-          amount: amountValue,
-          currency: selectedAccount?.currency || "USD",
-          account_id: accountId,
-          category: category || undefined,
-          description: description || undefined,
-        }),
+      await createTransaction.mutateAsync({
+        type,
+        amount: amountValue,
+        currency: selectedAccount?.currency || "USD",
+        account_id: accountId,
+        category: category || undefined,
+        description: description || undefined,
       });
 
-      if (response.ok) {
-        setAmount("");
-        setCategory("");
-        setDescription("");
-        onClose();
-        window.location.reload();
-      } else {
-        const error = await response.json();
-        alert(`Error: ${error.error}`);
-      }
-    } catch (error) {
+      setAmount("");
+      setCategory("");
+      setDescription("");
+      onClose();
+    } catch (error: any) {
       console.error("Error creating transaction:", error);
-      alert("Failed to create transaction");
-    } finally {
-      setIsLoading(false);
+      alert(`Error: ${error.message || "Failed to create transaction"}`);
     }
   };
 
@@ -284,16 +246,16 @@ export default function QuickTransactionModal({
               type="button"
               onClick={onClose}
               className="flex-1 smooth-transition rounded-lg bg-white/50 dark:bg-white/8 px-3 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm text-foreground hover:shadow-lg active:scale-95 disabled:opacity-50"
-              disabled={isLoading}
+              disabled={createTransaction.isPending}
             >
               Cancel
             </button>
             <button
               type="submit"
               className="flex-1 smooth-transition rounded-lg bg-linear-to-r from-accent to-accent/80 px-3 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm text-white hover:shadow-lg active:scale-95 disabled:opacity-50"
-              disabled={isLoading}
+              disabled={createTransaction.isPending}
             >
-              {isLoading ? "Creating..." : "Add"}
+              {createTransaction.isPending ? "Creating..." : "Add"}
             </button>
           </div>
         </form>

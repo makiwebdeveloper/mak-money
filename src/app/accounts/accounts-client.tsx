@@ -3,8 +3,14 @@
 import { useState } from "react";
 import { Database } from "@/lib/types/database";
 import { CURRENCIES, CurrencyCode } from "@/lib/constants/currencies";
-import { Skeleton } from "@/components/ui/skeleton";
 import { AccountsSkeleton } from "@/components/accounts-skeleton";
+import ConfirmDeleteModal from "@/components/confirm-delete-modal";
+import {
+  useAccounts,
+  useCreateAccount,
+  useUpdateAccount,
+  usePermanentDeleteAccount,
+} from "@/lib/hooks/useAccounts";
 
 type Account = Database["public"]["Tables"]["accounts"]["Row"] & {
   convertedBalance?: number;
@@ -21,11 +27,18 @@ export default function AccountsClient({
   initialAccounts,
   defaultCurrency,
 }: AccountsClientProps) {
-  const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
-  const [loading, setLoading] = useState(false);
+  // Use react-query hooks
+  const { data: accounts = initialAccounts, isLoading } = useAccounts();
+  const createAccount = useCreateAccount();
+  const updateAccount = useUpdateAccount();
+  const deleteAccount = usePermanentDeleteAccount();
+
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [showArchived, setShowArchived] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -35,122 +48,38 @@ export default function AccountsClient({
     balance: 0,
   });
 
-  const refetchAccounts = async () => {
-    try {
-      const response = await fetch("/api/accounts");
-      if (response.ok) {
-        const data = await response.json();
-        setAccounts(data.accounts || []);
-      }
-    } catch (error) {
-      console.error("Error fetching accounts:", error);
-    }
-  };
-
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
 
     try {
-      const response = await fetch("/api/accounts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        await refetchAccounts();
-        setFormData({ name: "", type: "other", currency: "USD", balance: 0 });
-        setIsCreating(false);
-      }
+      await createAccount.mutateAsync(formData);
+      setFormData({ name: "", type: "other", currency: "USD", balance: 0 });
+      setIsCreating(false);
     } catch (error) {
       console.error("Error creating account:", error);
-    } finally {
-      setLoading(false);
+      alert("Failed to create account");
     }
   };
 
   const handleUpdate = async (id: string, updates: Partial<Account>) => {
     try {
-      const response = await fetch(`/api/accounts/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
-      });
-
-      if (response.ok) {
-        await refetchAccounts();
-        setEditingId(null);
-      }
+      await updateAccount.mutateAsync({ id, updates });
+      setEditingId(null);
     } catch (error) {
       console.error("Error updating account:", error);
+      alert("Failed to update account");
     }
   };
 
-  const handleArchive = async (id: string) => {
-    if (!confirm("Archive this account?")) return;
+  const handleDelete = async () => {
+    if (!deleteConfirm) return;
 
-    setLoading(true);
     try {
-      const response = await fetch(`/api/accounts/${id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        setAccounts(
-          accounts.map((a) => (a.id === id ? { ...a, is_active: false } : a)),
-        );
-      }
+      await deleteAccount.mutateAsync(deleteConfirm.id);
+      setDeleteConfirm(null);
     } catch (error) {
-      console.error("Error archiving account:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRestore = async (id: string) => {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/accounts/${id}/restore`, {
-        method: "POST",
-      });
-
-      if (response.ok) {
-        const { account } = await response.json();
-        setAccounts(accounts.map((a) => (a.id === id ? account : a)));
-      } else {
-        console.error("Failed to restore account");
-      }
-    } catch (error) {
-      console.error("Error restoring account:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePermanentDelete = async (id: string) => {
-    if (
-      !confirm(
-        "Are you sure you want to PERMANENTLY delete this account? This action cannot be undone!",
-      )
-    )
-      return;
-
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/accounts/${id}?permanent=true`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        setAccounts(accounts.filter((a) => a.id !== id));
-      } else {
-        console.error("Failed to permanently delete account");
-      }
-    } catch (error) {
-      console.error("Error permanently deleting account:", error);
-    } finally {
-      setLoading(false);
+      console.error("Error deleting account:", error);
+      alert("Failed to delete account");
     }
   };
 
@@ -158,9 +87,11 @@ export default function AccountsClient({
     return CURRENCIES.find((c) => c.code === code)?.symbol || code;
   };
 
-  const activeAccounts = accounts.filter((a) => a.is_active);
-  const archivedAccounts = accounts.filter((a) => !a.is_active);
-  const displayedAccounts = showArchived ? archivedAccounts : activeAccounts;
+  const loading =
+    isLoading ||
+    createAccount.isPending ||
+    updateAccount.isPending ||
+    deleteAccount.isPending;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-background/95 p-3 sm:p-4 md:p-6 pt-32 md:pt-0 pb-24 md:pb-0">
@@ -175,32 +106,8 @@ export default function AccountsClient({
           </p>
         </div>
 
-        {/* Toggle between Active and Archived */}
-        <div className="mb-4 sm:mb-6 flex gap-2">
-          <button
-            onClick={() => setShowArchived(false)}
-            className={`smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-6 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm touch-target ${
-              !showArchived
-                ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-md sm:shadow-lg"
-                : "glass hover:shadow-md"
-            }`}
-          >
-            Active ({activeAccounts.length})
-          </button>
-          <button
-            onClick={() => setShowArchived(true)}
-            className={`smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-6 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm touch-target ${
-              showArchived
-                ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-md sm:shadow-lg"
-                : "glass hover:shadow-md"
-            }`}
-          >
-            Archived ({archivedAccounts.length})
-          </button>
-        </div>
-
         {/* Create Form or Accounts List */}
-        {!showArchived && isCreating ? (
+        {isCreating ? (
           <form onSubmit={handleCreate} className="card-glass mb-6 sm:mb-8">
             <h3 className="mb-4 sm:mb-6 text-lg sm:text-2xl font-bold text-foreground">
               Create Account
@@ -284,9 +191,9 @@ export default function AccountsClient({
               <button
                 type="submit"
                 className="flex-1 smooth-transition rounded-lg sm:rounded-xl bg-gradient-to-r from-accent to-accent/80 px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm text-white hover:shadow-lg active:scale-95 disabled:opacity-50 touch-target"
-                disabled={loading}
+                disabled={createAccount.isPending}
               >
-                {loading ? "Creating..." : "Create"}
+                {createAccount.isPending ? "Creating..." : "Create"}
               </button>
               <button
                 type="button"
@@ -300,22 +207,20 @@ export default function AccountsClient({
         ) : (
           <>
             {/* Loading state */}
-            {loading && displayedAccounts.length === 0 ? (
+            {isLoading && accounts.length === 0 ? (
               <AccountsSkeleton />
             ) : (
               <div className="space-y-3">
-                {displayedAccounts.length === 0 ? (
+                {accounts.length === 0 ? (
                   <div className="card-glass text-center py-16">
                     <p className="text-lg text-muted-foreground">
-                      {showArchived
-                        ? "No archived accounts"
-                        : "No accounts. Create your first account."}
+                      No accounts. Create your first account.
                     </p>
                   </div>
                 ) : (
-                  displayedAccounts.map((account) => (
+                  accounts.map((account) => (
                     <div key={account.id} className="card-glass p-3 sm:p-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <h3 className="text-base sm:text-lg font-bold text-foreground truncate">
                             {account.name}
@@ -352,34 +257,32 @@ export default function AccountsClient({
                               )}
                           </div>
                         </div>
-                        {showArchived ? (
-                          // Archived account actions
-                          <div className="flex gap-2 flex-shrink-0">
-                            <button
-                              onClick={() => handleRestore(account.id)}
-                              disabled={loading}
-                              className="smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-lg active:scale-95 touch-target"
-                            >
-                              Restore
-                            </button>
-                            <button
-                              onClick={() => handlePermanentDelete(account.id)}
-                              disabled={loading}
-                              className="smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs bg-gradient-to-r from-red-500 to-red-600 text-white hover:shadow-lg active:scale-95 touch-target"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        ) : (
-                          // Active account actions
-                          <button
-                            onClick={() => handleArchive(account.id)}
-                            disabled={loading}
-                            className="smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs glass hover:shadow-md text-foreground flex-shrink-0 touch-target"
+                        {/* Delete button - always on the right */}
+                        <button
+                          onClick={() =>
+                            setDeleteConfirm({
+                              id: account.id,
+                              name: account.name,
+                            })
+                          }
+                          disabled={loading}
+                          className="smooth-transition rounded-lg p-2 glass hover:shadow-md hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 hover:text-red-600 active:scale-95 touch-target disabled:opacity-50"
+                          title="Delete account"
+                        >
+                          <svg
+                            className="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
                           >
-                            Archive
-                          </button>
-                        )}
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </button>
                       </div>
                     </div>
                   ))
@@ -388,18 +291,26 @@ export default function AccountsClient({
             )}
 
             {/* Create New Account Button */}
-            {!showArchived && (
-              <div className="mt-6 sm:mt-8">
-                <button
-                  onClick={() => setIsCreating(true)}
-                  className="w-full smooth-transition rounded-lg sm:rounded-xl bg-gradient-to-r from-accent to-accent/80 px-3 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-semibold text-white hover:shadow-lg active:scale-95 touch-target"
-                >
-                  Create Account
-                </button>
-              </div>
-            )}
+            <div className="mt-6 sm:mt-8">
+              <button
+                onClick={() => setIsCreating(true)}
+                className="w-full smooth-transition rounded-lg sm:rounded-xl bg-gradient-to-r from-accent to-accent/80 px-3 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-semibold text-white hover:shadow-lg active:scale-95 touch-target"
+              >
+                Create Account
+              </button>
+            </div>
           </>
         )}
+
+        {/* Delete Confirmation Modal */}
+        <ConfirmDeleteModal
+          isOpen={!!deleteConfirm}
+          title="Delete Account"
+          message={`Are you sure you want to delete "${deleteConfirm?.name}"? This action cannot be undone and will remove all associated data.`}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteConfirm(null)}
+          isDeleting={deleteAccount.isPending}
+        />
       </div>
     </div>
   );

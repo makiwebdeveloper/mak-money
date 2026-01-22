@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Navigation } from "@/components/navigation";
 import FloatingActionButton from "@/components/floating-action-button";
+import { QueryProvider } from "@/components/query-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,9 +39,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gradient-to-br from-background via-background to-background/95 text-foreground pb-24 md:pb-0`}
       >
-        <Navigation />
-        <main className="min-h-screen">{children}</main>
-        <FloatingActionButton />
+        <QueryProvider>
+          <Navigation />
+          <main className="min-h-screen">{children}</main>
+          <FloatingActionButton />
+        </QueryProvider>
       </body>
     </html>
   );

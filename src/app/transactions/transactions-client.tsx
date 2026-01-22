@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { Database } from "@/lib/types/database";
 import { TransactionsSkeleton } from "@/components/transactions-skeleton";
+import {
+  useTransactions,
+  useCreateTransaction,
+} from "@/lib/hooks/useTransactions";
+import { useAccounts } from "@/lib/hooks/useAccounts";
 
 type Transaction = Database["public"]["Tables"]["transactions"]["Row"];
 type Account = Database["public"]["Tables"]["accounts"]["Row"];
@@ -14,10 +19,13 @@ interface TransactionsClientProps {
 
 export default function TransactionsClient({
   initialTransactions,
-  accounts,
+  accounts: initialAccounts,
 }: TransactionsClientProps) {
-  const [transactions, setTransactions] =
-    useState<Transaction[]>(initialTransactions);
+  // Use react-query hooks
+  const { data: transactions = initialTransactions } = useTransactions();
+  const { data: accounts = initialAccounts } = useAccounts();
+  const createTransaction = useCreateTransaction();
+
   const [type, setType] = useState<"income" | "expense" | "transfer">("income");
   const [amount, setAmount] = useState("");
   const [accountId, setAccountId] = useState("");
@@ -26,11 +34,10 @@ export default function TransactionsClient({
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [isCreating, setIsCreating] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLoading) return;
+    if (createTransaction.isPending) return;
 
     if (!amount || Number(amount) <= 0) {
       alert("Please enter a valid amount");
@@ -53,45 +60,30 @@ export default function TransactionsClient({
       }
     }
 
-    setIsLoading(true);
-
     try {
       const selectedAccount = accounts.find((a) =>
         type === "transfer" ? a.id === fromAccountId : a.id === accountId,
       );
 
-      const response = await fetch("/api/transactions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type,
-          amount: Number(amount),
-          currency: selectedAccount?.currency || "USD",
-          account_id: type === "transfer" ? undefined : accountId,
-          from_account_id: type === "transfer" ? fromAccountId : undefined,
-          to_account_id: type === "transfer" ? toAccountId : undefined,
-          category: category || undefined,
-          description: description || undefined,
-        }),
+      await createTransaction.mutateAsync({
+        type,
+        amount: Number(amount),
+        currency: selectedAccount?.currency || "USD",
+        account_id: type === "transfer" ? undefined : accountId,
+        from_account_id: type === "transfer" ? fromAccountId : undefined,
+        to_account_id: type === "transfer" ? toAccountId : undefined,
+        category: category || undefined,
+        description: description || undefined,
       });
 
-      if (response.ok) {
-        const { transaction } = await response.json();
-        setTransactions([transaction, ...transactions]);
-        setAmount("");
-        setCategory("");
-        setDescription("");
-        setIsCreating(false);
-        window.location.reload();
-      } else {
-        const error = await response.json();
-        alert(`Error: ${error.error}`);
-      }
-    } catch (error) {
+      // Reset form
+      setAmount("");
+      setCategory("");
+      setDescription("");
+      setIsCreating(false);
+    } catch (error: any) {
       console.error("Error creating transaction:", error);
-      alert("Failed to create transaction");
-    } finally {
-      setIsLoading(false);
+      alert(`Error: ${error.message || "Failed to create transaction"}`);
     }
   };
 
@@ -314,10 +306,12 @@ export default function TransactionsClient({
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={createTransaction.isPending}
                 className="w-full smooth-transition rounded-xl bg-gradient-to-r from-accent to-accent/80 px-4 py-2.5 sm:py-3 font-semibold text-sm sm:text-base text-white hover:shadow-lg active:scale-95 disabled:opacity-50 touch-target"
               >
-                {isLoading ? "Creating..." : "Create Transaction"}
+                {createTransaction.isPending
+                  ? "Creating..."
+                  : "Create Transaction"}
               </button>
             </form>
           </div>
@@ -335,7 +329,7 @@ export default function TransactionsClient({
         )}
 
         {/* Transactions List */}
-        {isLoading && transactions.length === 0 ? (
+        {createTransaction.isPending && transactions.length === 0 ? (
           <TransactionsSkeleton />
         ) : transactions.length === 0 ? (
           <div className="card-glass py-12 sm:py-16 text-center text-xs sm:text-base text-muted-foreground">
