@@ -43,12 +43,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get all user's active accounts with their balances
+    // Get all user's active accounts with their balances (excluding those marked as excluded from free)
     const { data: accounts, error: accountsError } = await supabase
       .from("accounts")
       .select("balance, currency")
       .eq("user_id", user.id)
-      .eq("is_active", true);
+      .eq("is_active", true)
+      .eq("exclude_from_free", false);
 
     if (accountsError) {
       console.error("Error fetching accounts:", accountsError);

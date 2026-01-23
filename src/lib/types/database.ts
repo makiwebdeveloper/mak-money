@@ -75,6 +75,7 @@ export type Database = {
           currency: string;
           balance: number;
           is_active: boolean;
+          exclude_from_free: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -86,6 +87,7 @@ export type Database = {
           currency?: string;
           balance?: number;
           is_active?: boolean;
+          exclude_from_free?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -97,6 +99,7 @@ export type Database = {
           currency?: string;
           balance?: number;
           is_active?: boolean;
+          exclude_from_free?: boolean;
           created_at?: string;
           updated_at?: string;
         };

@@ -46,12 +46,14 @@ export function UnifiedSwipeableView({
     const container = containerRef.current;
     if (!container) return;
 
-    let scrollTimeout: NodeJS.Timeout;
+    let rafId: number | null = null;
 
     const handleScroll = () => {
-      clearTimeout(scrollTimeout);
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
 
-      scrollTimeout = setTimeout(() => {
+      rafId = requestAnimationFrame(() => {
         const scrollLeft = container.scrollLeft;
         const viewportWidth = window.innerWidth;
         const newIndex = Math.round(scrollLeft / viewportWidth);
@@ -63,14 +65,17 @@ export function UnifiedSwipeableView({
         ) {
           setLocalIndex(newIndex);
         }
-      }, 100);
+        rafId = null;
+      });
     };
 
     container.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
       container.removeEventListener("scroll", handleScroll);
-      clearTimeout(scrollTimeout);
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
     };
   }, [localIndex]);
 

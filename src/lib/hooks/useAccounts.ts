@@ -94,6 +94,8 @@ export function useCreateAccount() {
       queryClient.invalidateQueries({ queryKey: accountKeys.list() });
       // Also invalidate pools since Free pool balance depends on accounts
       queryClient.invalidateQueries({ queryKey: ["pools"] });
+      // Invalidate free balance
+      queryClient.invalidateQueries({ queryKey: ["pools", "freeBalance"] });
     },
   });
 }
@@ -147,6 +149,8 @@ export function useUpdateAccount() {
       queryClient.invalidateQueries({ queryKey: accountKeys.list() });
       // Invalidate pools since account balance affects Free pool
       queryClient.invalidateQueries({ queryKey: ["pools"] });
+      // Invalidate free balance to recalculate when exclude_from_free changes
+      queryClient.invalidateQueries({ queryKey: ["pools", "freeBalance"] });
     },
   });
 }
@@ -192,6 +196,8 @@ export function useArchiveAccount() {
       queryClient.invalidateQueries({ queryKey: accountKeys.list() });
       // Invalidate pools since archiving account affects Free pool
       queryClient.invalidateQueries({ queryKey: ["pools"] });
+      // Invalidate free balance
+      queryClient.invalidateQueries({ queryKey: ["pools", "freeBalance"] });
     },
   });
 }
@@ -237,6 +243,8 @@ export function useRestoreAccount() {
       queryClient.invalidateQueries({ queryKey: accountKeys.list() });
       // Invalidate pools since restoring account affects Free pool
       queryClient.invalidateQueries({ queryKey: ["pools"] });
+      // Invalidate free balance
+      queryClient.invalidateQueries({ queryKey: ["pools", "freeBalance"] });
     },
   });
 }
@@ -280,6 +288,8 @@ export function usePermanentDeleteAccount() {
       queryClient.invalidateQueries({ queryKey: accountKeys.list() });
       // Invalidate pools since deleting account affects Free pool
       queryClient.invalidateQueries({ queryKey: ["pools"] });
+      // Invalidate free balance
+      queryClient.invalidateQueries({ queryKey: ["pools", "freeBalance"] });
     },
   });
 }

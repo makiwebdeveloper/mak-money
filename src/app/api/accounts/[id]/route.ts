@@ -63,7 +63,7 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const { name, type, currency, balance } = body;
+    const { name, type, currency, balance, exclude_from_free } = body;
 
     const updateData: Record<string, unknown> = {};
 
@@ -80,6 +80,8 @@ export async function PATCH(
     if (type !== undefined) updateData.type = type;
     if (currency !== undefined) updateData.currency = currency;
     if (balance !== undefined) updateData.balance = balance;
+    if (exclude_from_free !== undefined)
+      updateData.exclude_from_free = exclude_from_free;
 
     const { data: account, error } = await supabase
       .from("accounts")

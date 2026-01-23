@@ -10,6 +10,7 @@ import {
   usePools,
   useCreatePool,
   usePermanentDeletePool,
+  useFreeBalance,
 } from "@/lib/hooks/usePools";
 
 type Pool = Database["public"]["Tables"]["money_pools"]["Row"] & {
@@ -37,6 +38,7 @@ export default function PoolsClient({
   // Use react-query hooks
   const { data: poolsData = initialPools } = usePools();
   const pools: Pool[] = poolsData as Pool[];
+  const { data: freeBalance = 0 } = useFreeBalance();
   const createPool = useCreatePool();
   const deletePool = usePermanentDeletePool();
 
@@ -55,8 +57,10 @@ export default function PoolsClient({
   const currencySymbol =
     CURRENCIES.find((c) => c.code === currency)?.symbol || "$";
 
-  // Only show active pools
-  const displayedPools = pools.filter((pool) => pool.is_active);
+  // Only show active pools (excluding Free pool since it's shown separately above)
+  const displayedPools = pools.filter(
+    (pool) => pool.is_active && pool.type !== "free",
+  );
 
   const handleCreatePool = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,10 +96,6 @@ export default function PoolsClient({
     const pool = pools.find((p) => p.id === poolId);
     return pool?.balance || 0;
   };
-
-  // Get free funds balance
-  const freePool = pools.find((p) => p.type === "free");
-  const freeBalance = freePool ? getPoolBalance(freePool.id) : 0;
 
   // Total in Pools = sum of all active pools EXCEPT Free pool (only allocated money)
   const totalBalance = pools

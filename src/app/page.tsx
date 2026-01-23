@@ -58,7 +58,16 @@ async function AllContent() {
 
   let freeBalance = 0;
   if (freePool) {
-    // Calculate free balance by converting all amounts to user's currency
+    // Get accounts that are NOT excluded from free balance calculation
+    const accountsForFreeBalance =
+      accounts?.filter((acc) => !acc.exclude_from_free) || [];
+
+    // Calculate total balance for non-excluded accounts
+    const totalAccountBalance = await getTotalBalanceInCurrency(
+      accountsForFreeBalance,
+      currency,
+    );
+
     // Get all allocations (excluding free pool)
     const { data: allocations } = await supabase
       .from("allocations")
@@ -79,7 +88,7 @@ async function AllContent() {
       totalAllocated += converted;
     }
 
-    freeBalance = Number((totalBalance - totalAllocated).toFixed(2));
+    freeBalance = Number((totalAccountBalance - totalAllocated).toFixed(2));
   }
 
   // Get last 5 transactions

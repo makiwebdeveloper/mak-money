@@ -46,6 +46,7 @@ export default function AccountsClient({
     type: "other" as AccountType,
     currency: (defaultCurrency || "USD") as CurrencyCode,
     balance: 0,
+    exclude_from_free: false,
   });
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -53,7 +54,13 @@ export default function AccountsClient({
 
     try {
       await createAccount.mutateAsync(formData);
-      setFormData({ name: "", type: "other", currency: "USD", balance: 0 });
+      setFormData({
+        name: "",
+        type: "other",
+        currency: "USD",
+        balance: 0,
+        exclude_from_free: false,
+      });
       setIsCreating(false);
     } catch (error) {
       console.error("Error creating account:", error);
@@ -185,6 +192,30 @@ export default function AccountsClient({
                   className="glass-sm mobile-input w-full rounded-lg sm:rounded-xl px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
                 />
               </div>
+              <div className="flex items-center gap-3 p-3 glass-sm rounded-lg sm:rounded-xl">
+                <input
+                  type="checkbox"
+                  id="exclude-from-free-create"
+                  checked={formData.exclude_from_free}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      exclude_from_free: e.target.checked,
+                    })
+                  }
+                  className="h-4 w-4 sm:h-5 sm:w-5 rounded border-gray-300 text-accent focus:ring-accent/50 cursor-pointer"
+                />
+                <label
+                  htmlFor="exclude-from-free-create"
+                  className="text-xs sm:text-sm text-foreground cursor-pointer select-none flex-1"
+                >
+                  <span className="font-semibold">Exclude from free money</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    This account won't be counted in available free balance
+                    (e.g., savings)
+                  </p>
+                </label>
+              </div>
             </div>
             <div className="mt-4 sm:mt-5 flex gap-2">
               <button
@@ -221,9 +252,19 @@ export default function AccountsClient({
                     <div key={account.id} className="card-glass p-3 sm:p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
-                          <h3 className="text-base sm:text-lg font-bold text-foreground truncate">
-                            {account.name}
-                          </h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-base sm:text-lg font-bold text-foreground truncate">
+                              {account.name}
+                            </h3>
+                            {account.exclude_from_free && (
+                              <span
+                                className="shrink-0 px-2 py-0.5 text-[10px] sm:text-xs font-semibold rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400"
+                                title="Excluded from free money calculation"
+                              >
+                                Savings
+                              </span>
+                            )}
+                          </div>
                           <p className="mt-0.5 sm:mt-1 text-xs capitalize text-muted-foreground">
                             {account.type === "bank"
                               ? "Bank"
@@ -254,6 +295,27 @@ export default function AccountsClient({
                                   ({defaultCurrency})
                                 </p>
                               )}
+                          </div>
+                          {/* Toggle exclude_from_free */}
+                          <div className="mt-2 sm:mt-3 flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id={`exclude-${account.id}`}
+                              checked={account.exclude_from_free}
+                              onChange={(e) =>
+                                handleUpdate(account.id, {
+                                  exclude_from_free: e.target.checked,
+                                })
+                              }
+                              disabled={loading}
+                              className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded border-gray-300 text-accent focus:ring-accent/50 cursor-pointer disabled:opacity-50"
+                            />
+                            <label
+                              htmlFor={`exclude-${account.id}`}
+                              className="text-[10px] sm:text-xs text-muted-foreground cursor-pointer select-none"
+                            >
+                              Exclude from free money
+                            </label>
                           </div>
                         </div>
                         {/* Delete button - always on the right */}
