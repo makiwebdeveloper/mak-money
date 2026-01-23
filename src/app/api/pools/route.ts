@@ -3,6 +3,29 @@ import { NextResponse } from "next/server";
 import { convertCurrency } from "@/lib/constants/exchange-rates";
 import { CurrencyCode } from "@/lib/constants/currencies";
 
+// Generate a random pleasant color for pools
+function generateRandomColor(): string {
+  const colors = [
+    "#6366f1", // Indigo
+    "#8b5cf6", // Violet
+    "#ec4899", // Pink
+    "#f43f5e", // Rose
+    "#f59e0b", // Amber
+    "#10b981", // Emerald
+    "#06b6d4", // Cyan
+    "#3b82f6", // Blue
+    "#6366f1", // Indigo
+    "#a855f7", // Purple
+    "#14b8a6", // Teal
+    "#f97316", // Orange
+    "#84cc16", // Lime
+    "#22c55e", // Green
+    "#0ea5e9", // Sky
+    "#d946ef", // Fuchsia
+  ];
+  return colors[Math.floor(Math.random() * colors.length)];
+}
+
 // GET /api/pools - Get all active pools for current user with balances
 export async function GET() {
   try {
@@ -166,7 +189,7 @@ export async function POST(request: Request) {
         user_id: user.id,
         name: name.trim(),
         type: type || "custom",
-        color: color || "#6366f1",
+        color: color || generateRandomColor(),
         icon: icon || "wallet",
       })
       .select()

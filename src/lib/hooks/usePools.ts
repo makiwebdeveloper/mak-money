@@ -99,7 +99,7 @@ export function useCreatePool() {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           // Make random color and icon for optimistic update
-          color: "#" + Math.floor(Math.random() * 16777215).toString(16),
+          color: "#d4d4d4",
           icon: "piggy-bank",
         };
         return [...old, optimisticPool];
@@ -194,6 +194,8 @@ export function usePermanentDeletePool() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: poolKeys.list() });
+      queryClient.invalidateQueries({ queryKey: poolKeys.freeBalance() });
+      queryClient.invalidateQueries({ queryKey: poolKeys.balances() });
     },
   });
 }

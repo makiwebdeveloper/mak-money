@@ -1,22 +1,22 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Database } from "@/lib/types/database";
-import { CURRENCIES, CurrencyCode } from "@/lib/constants/currencies";
-import { AccountsSkeleton } from "@/components/accounts-skeleton";
-import ConfirmDeleteModal from "@/components/confirm-delete-modal";
+import { useState } from 'react';
+import { Database } from '@/lib/types/database';
+import { CURRENCIES, CurrencyCode } from '@/lib/constants/currencies';
+import { AccountsSkeleton } from '@/components/accounts-skeleton';
+import ConfirmDeleteModal from '@/components/confirm-delete-modal';
 import {
   useAccounts,
   useCreateAccount,
   useUpdateAccount,
   usePermanentDeleteAccount,
-} from "@/lib/hooks/useAccounts";
+} from '@/lib/hooks/useAccounts';
 
-type Account = Database["public"]["Tables"]["accounts"]["Row"] & {
+type Account = Database['public']['Tables']['accounts']['Row'] & {
   convertedBalance?: number;
   defaultCurrency?: string;
 };
-type AccountType = Database["public"]["Tables"]["accounts"]["Row"]["type"];
+type AccountType = Database['public']['Tables']['accounts']['Row']['type'];
 
 interface AccountsClientProps {
   initialAccounts: Account[];
@@ -28,7 +28,7 @@ export default function AccountsClient({
   defaultCurrency,
 }: AccountsClientProps) {
   // Use react-query hooks
-  const { data: accounts = initialAccounts, isLoading } = useAccounts();
+  const { data: accounts = initialAccounts } = useAccounts();
   const createAccount = useCreateAccount();
   const updateAccount = useUpdateAccount();
   const deleteAccount = usePermanentDeleteAccount();
@@ -42,9 +42,9 @@ export default function AccountsClient({
 
   // Form states
   const [formData, setFormData] = useState({
-    name: "",
-    type: "other" as AccountType,
-    currency: (defaultCurrency || "USD") as CurrencyCode,
+    name: '',
+    type: 'other' as AccountType,
+    currency: (defaultCurrency || 'USD') as CurrencyCode,
     balance: 0,
     exclude_from_free: false,
   });
@@ -55,16 +55,16 @@ export default function AccountsClient({
     try {
       await createAccount.mutateAsync(formData);
       setFormData({
-        name: "",
-        type: "other",
-        currency: "USD",
+        name: '',
+        type: 'other',
+        currency: 'USD',
         balance: 0,
         exclude_from_free: false,
       });
       setIsCreating(false);
     } catch (error) {
-      console.error("Error creating account:", error);
-      alert("Failed to create account");
+      console.error('Error creating account:', error);
+      alert('Failed to create account');
     }
   };
 
@@ -73,8 +73,8 @@ export default function AccountsClient({
       await updateAccount.mutateAsync({ id, updates });
       setEditingId(null);
     } catch (error) {
-      console.error("Error updating account:", error);
-      alert("Failed to update account");
+      console.error('Error updating account:', error);
+      alert('Failed to update account');
     }
   };
 
@@ -85,8 +85,8 @@ export default function AccountsClient({
       await deleteAccount.mutateAsync(deleteConfirm.id);
       setDeleteConfirm(null);
     } catch (error) {
-      console.error("Error deleting account:", error);
-      alert("Failed to delete account");
+      console.error('Error deleting account:', error);
+      alert('Failed to delete account');
     }
   };
 
@@ -95,7 +95,6 @@ export default function AccountsClient({
   };
 
   const loading = Boolean(
-    isLoading ||
     createAccount.isPending ||
     updateAccount.isPending ||
     deleteAccount.isPending,
@@ -181,7 +180,7 @@ export default function AccountsClient({
                 <input
                   type="number"
                   step="0.01"
-                  value={formData.balance || ""}
+                  value={formData.balance || ''}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
@@ -223,7 +222,7 @@ export default function AccountsClient({
                 className="flex-1 smooth-transition rounded-lg sm:rounded-xl bg-gradient-to-r from-accent to-accent/80 px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm text-white hover:shadow-lg active:scale-95 disabled:opacity-50 touch-target"
                 disabled={createAccount.isPending}
               >
-                {createAccount.isPending ? "Creating..." : "Create"}
+                {createAccount.isPending ? 'Creating...' : 'Create'}
               </button>
               <button
                 type="button"
@@ -236,120 +235,116 @@ export default function AccountsClient({
           </form>
         ) : (
           <>
-            {/* Loading state */}
-            {isLoading && accounts.length === 0 ? (
-              <AccountsSkeleton />
-            ) : (
-              <div className="space-y-3">
-                {accounts.length === 0 ? (
-                  <div className="card-glass text-center py-16">
-                    <p className="text-lg text-muted-foreground">
-                      No accounts. Create your first account.
-                    </p>
-                  </div>
-                ) : (
-                  accounts.map((account) => (
-                    <div key={account.id} className="card-glass p-3 sm:p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-base sm:text-lg font-bold text-foreground truncate">
-                              {account.name}
-                            </h3>
-                            {account.exclude_from_free && (
-                              <span
-                                className="shrink-0 px-2 py-0.5 text-[10px] sm:text-xs font-semibold rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400"
-                                title="Excluded from free money calculation"
-                              >
-                                Savings
-                              </span>
-                            )}
-                          </div>
-                          <p className="mt-0.5 sm:mt-1 text-xs capitalize text-muted-foreground">
-                            {account.type === "bank"
-                              ? "Bank"
-                              : account.type === "crypto"
-                                ? "Crypto"
-                                : "Other"}{" "}
-                            • {account.currency}
-                          </p>
-                          <div className="mt-1.5 sm:mt-2">
-                            <p className="text-xl sm:text-2xl font-bold text-accent">
-                              {getCurrencySymbol(account.currency)}{" "}
-                              {account.balance.toLocaleString("en-US", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}
-                            </p>
-                            {account.currency !== defaultCurrency &&
-                              account.convertedBalance !== undefined && (
-                                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                                  ≈ {getCurrencySymbol(defaultCurrency)}{" "}
-                                  {account.convertedBalance.toLocaleString(
-                                    "en-US",
-                                    {
-                                      minimumFractionDigits: 2,
-                                      maximumFractionDigits: 2,
-                                    },
-                                  )}{" "}
-                                  ({defaultCurrency})
-                                </p>
-                              )}
-                          </div>
-                          {/* Toggle exclude_from_free */}
-                          <div className="mt-2 sm:mt-3 flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              id={`exclude-${account.id}`}
-                              checked={account.exclude_from_free}
-                              onChange={(e) =>
-                                handleUpdate(account.id, {
-                                  exclude_from_free: e.target.checked,
-                                })
-                              }
-                              disabled={loading}
-                              className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded border-gray-300 text-accent focus:ring-accent/50 cursor-pointer disabled:opacity-50"
-                            />
-                            <label
-                              htmlFor={`exclude-${account.id}`}
-                              className="text-[10px] sm:text-xs text-muted-foreground cursor-pointer select-none"
+            {/* Accounts List */}
+            <div className="space-y-3">
+              {accounts.length === 0 ? (
+                <div className="card-glass text-center py-16">
+                  <p className="text-lg text-muted-foreground">
+                    No accounts. Create your first account.
+                  </p>
+                </div>
+              ) : (
+                accounts.map((account) => (
+                  <div key={account.id} className="card-glass p-3 sm:p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-base sm:text-lg font-bold text-foreground truncate">
+                            {account.name}
+                          </h3>
+                          {account.exclude_from_free && (
+                            <span
+                              className="shrink-0 px-2 py-0.5 text-[10px] sm:text-xs font-semibold rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400"
+                              title="Excluded from free money calculation"
                             >
-                              Exclude from free money
-                            </label>
-                          </div>
+                              Savings
+                            </span>
+                          )}
                         </div>
-                        {/* Delete button - always on the right */}
-                        <button
-                          onClick={() =>
-                            setDeleteConfirm({
-                              id: account.id,
-                              name: account.name,
-                            })
-                          }
-                          disabled={loading}
-                          className="smooth-transition rounded-lg p-2 glass hover:shadow-md hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 hover:text-red-600 active:scale-95 touch-target disabled:opacity-50"
-                          title="Delete account"
-                        >
-                          <svg
-                            className="h-5 w-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
+                        <p className="mt-0.5 sm:mt-1 text-xs capitalize text-muted-foreground">
+                          {account.type === 'bank'
+                            ? 'Bank'
+                            : account.type === 'crypto'
+                              ? 'Crypto'
+                              : 'Other'}{' '}
+                          • {account.currency}
+                        </p>
+                        <div className="mt-1.5 sm:mt-2">
+                          <p className="text-xl sm:text-2xl font-bold text-accent">
+                            {getCurrencySymbol(account.currency)}{' '}
+                            {account.balance.toLocaleString('en-US', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </p>
+                          {account.currency !== defaultCurrency &&
+                            account.convertedBalance !== undefined && (
+                              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                                ≈ {getCurrencySymbol(defaultCurrency)}{' '}
+                                {account.convertedBalance.toLocaleString(
+                                  'en-US',
+                                  {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  },
+                                )}{' '}
+                                ({defaultCurrency})
+                              </p>
+                            )}
+                        </div>
+                        {/* Toggle exclude_from_free */}
+                        <div className="mt-2 sm:mt-3 flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id={`exclude-${account.id}`}
+                            checked={account.exclude_from_free}
+                            onChange={(e) =>
+                              handleUpdate(account.id, {
+                                exclude_from_free: e.target.checked,
+                              })
+                            }
+                            disabled={loading}
+                            className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded border-gray-300 text-accent focus:ring-accent/50 cursor-pointer disabled:opacity-50"
+                          />
+                          <label
+                            htmlFor={`exclude-${account.id}`}
+                            className="text-[10px] sm:text-xs text-muted-foreground cursor-pointer select-none"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                        </button>
+                            Exclude from free money
+                          </label>
+                        </div>
                       </div>
+                      {/* Delete button - always on the right */}
+                      <button
+                        onClick={() =>
+                          setDeleteConfirm({
+                            id: account.id,
+                            name: account.name,
+                          })
+                        }
+                        disabled={loading}
+                        className="smooth-transition rounded-lg p-2 glass hover:shadow-md hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 hover:text-red-600 active:scale-95 touch-target disabled:opacity-50"
+                        title="Delete account"
+                      >
+                        <svg
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                      </button>
                     </div>
-                  ))
-                )}
-              </div>
-            )}
+                  </div>
+                ))
+              )}
+            </div>
 
             {/* Create New Account Button */}
             <div className="mt-6 sm:mt-8">

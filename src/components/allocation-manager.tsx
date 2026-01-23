@@ -1,9 +1,10 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { buttonStyles, inputStyles } from "@/lib/styles/components";
-import { useAccounts } from "@/lib/hooks/useAccounts";
-import { useTransferAllocation } from "@/lib/hooks/usePools";
+import { useState, useEffect } from 'react';
+import { formatNumber } from '@/lib/utils';
+import { buttonStyles, inputStyles } from '@/lib/styles/components';
+import { useAccounts } from '@/lib/hooks/useAccounts';
+import { useTransferAllocation } from '@/lib/hooks/usePools';
 
 interface AllocationManagerProps {
   poolId: string;
@@ -34,14 +35,14 @@ export default function AllocationManager({
     const difference = newAmount - currentAmount;
 
     if (newAmount < 0) {
-      alert("Amount cannot be negative");
+      alert('Amount cannot be negative');
       return;
     }
 
     // If increasing amount, check free funds
     if (difference > 0 && difference > freeBalance) {
       alert(
-        `Insufficient free funds!\nAvailable: ${freeBalance.toFixed(2)}\nRequired: ${difference.toFixed(2)}`,
+        `Insufficient free funds!\nAvailable: ${formatNumber(freeBalance)}\nRequired: ${formatNumber(difference)}`,
       );
       return;
     }
@@ -49,7 +50,7 @@ export default function AllocationManager({
     try {
       // Get first account (can improve account selection logic)
       if (accounts.length === 0) {
-        alert("Create an account first");
+        alert('Create an account first');
         return;
       }
 
@@ -64,8 +65,8 @@ export default function AllocationManager({
       onSuccess();
       onClose();
     } catch (error: any) {
-      console.error("Error updating allocation:", error);
-      alert(`Error: ${error.message || "Failed to update allocation"}`);
+      console.error('Error updating allocation:', error);
+      alert(`Error: ${error.message || 'Failed to update allocation'}`);
     }
   };
 
@@ -108,10 +109,10 @@ export default function AllocationManager({
             📊 {poolName}
           </div>
           <div className="text-xs text-blue-700">
-            Current amount: <strong>{currentAmount.toFixed(2)}</strong>
+            Current amount: <strong>{formatNumber(currentAmount)}</strong>
           </div>
           <div className="text-xs text-blue-700">
-            Free funds: <strong>{freeBalance.toFixed(2)}</strong>
+            Free funds: <strong>{formatNumber(freeBalance)}</strong>
           </div>
         </div>
 
@@ -140,17 +141,17 @@ export default function AllocationManager({
             <div
               className={`rounded-lg p-3 ${
                 difference > 0
-                  ? "bg-orange-50 text-orange-900"
-                  : "bg-green-50 text-green-900"
+                  ? 'bg-orange-50 text-orange-900'
+                  : 'bg-green-50 text-green-900'
               }`}
             >
               <div className="mb-1 text-sm font-medium">
-                {difference > 0 ? "📤 From free" : "📥 To free"}:{" "}
-                <strong>{Math.abs(difference).toFixed(2)}</strong>
+                {difference > 0 ? '📤 From free' : '📥 To free'}:{' '}
+                <strong>{formatNumber(Math.abs(difference))}</strong>
               </div>
               <div className="text-xs opacity-75">
-                Free after operation:{" "}
-                <strong>{newFreeBalance.toFixed(2)}</strong>
+                Free after operation:{' '}
+                <strong>{formatNumber(newFreeBalance)}</strong>
               </div>
               {newFreeBalance < 0 && (
                 <div className="mt-1 text-xs font-medium text-red-600">
@@ -164,7 +165,7 @@ export default function AllocationManager({
           <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
-              onClick={() => setAmount("0.00")}
+              onClick={() => setAmount('0.00')}
               className="rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
             >
               Clear
@@ -194,17 +195,17 @@ export default function AllocationManager({
             <button
               type="button"
               onClick={onClose}
-              className={buttonStyles.secondary + " flex-1"}
+              className={buttonStyles.secondary + ' flex-1'}
               disabled={transferAllocation.isPending}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className={buttonStyles.primary + " flex-1"}
+              className={buttonStyles.primary + ' flex-1'}
               disabled={transferAllocation.isPending || newFreeBalance < 0}
             >
-              {transferAllocation.isPending ? "Saving..." : "Save"}
+              {transferAllocation.isPending ? 'Saving...' : 'Save'}
             </button>
           </div>
         </form>
