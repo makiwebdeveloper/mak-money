@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { CurrencyCode } from "@/lib/constants/currencies";
 import { useFreeBalance } from "@/lib/hooks/usePools";
+import { useTotalBalance } from "@/lib/hooks/useAccounts";
 
 interface HomeViewProps {
   currency: CurrencyCode;
@@ -14,13 +15,16 @@ interface HomeViewProps {
 
 export function HomeView({
   currency,
-  totalBalance,
+  totalBalance: initialTotalBalance,
   freeBalance: initialFreeBalance,
-  accountsCount,
+  accountsCount: initialAccountsCount,
   recentTransactions,
 }: HomeViewProps) {
-  // Use react-query hook for live updates
+  // Use react-query hooks for live updates
   const { data: freeBalance = initialFreeBalance } = useFreeBalance();
+  const { data: balanceData } = useTotalBalance();
+  const totalBalance = balanceData?.totalBalance ?? initialTotalBalance;
+  const accountsCount = balanceData?.accountsCount ?? initialAccountsCount;
   return (
     <div className="min-h-full bg-gradient-to-br from-background to-background/95 px-3 sm:px-4 py-6">
       {/* Currency indicator */}

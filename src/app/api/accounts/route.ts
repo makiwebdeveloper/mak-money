@@ -81,7 +81,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, type, currency, balance } = body;
+    const { name, type, currency, balance, exclude_from_free } = body;
 
     if (!name || !name.trim()) {
       return NextResponse.json(
@@ -105,6 +105,7 @@ export async function POST(request: Request) {
         type: type || "other",
         currency,
         balance: balance || 0,
+        exclude_from_free: exclude_from_free || false,
       })
       .select()
       .single();

@@ -15,6 +15,7 @@ export const accountKeys = {
   list: (filters?: any) => [...accountKeys.lists(), filters] as const,
   details: () => [...accountKeys.all, "detail"] as const,
   detail: (id: string) => [...accountKeys.details(), id] as const,
+  balance: () => [...accountKeys.all, "balance"] as const,
 };
 
 // Fetch accounts
@@ -32,6 +33,24 @@ export function useAccounts() {
   });
 }
 
+// Fetch total balance
+export function useTotalBalance() {
+  return useQuery({
+    queryKey: accountKeys.balance(),
+    queryFn: async (): Promise<{
+      totalBalance: number;
+      currency: string;
+      accountsCount: number;
+    }> => {
+      const response = await fetch("/api/accounts/balance");
+      if (!response.ok) {
+        throw new Error("Failed to fetch total balance");
+      }
+      return response.json();
+    },
+  });
+}
+
 // Create account
 export function useCreateAccount() {
   const queryClient = useQueryClient();
@@ -42,6 +61,7 @@ export function useCreateAccount() {
       type: AccountType;
       currency: CurrencyCode;
       balance: number;
+      exclude_from_free?: boolean;
     }) => {
       const response = await fetch("/api/accounts", {
         method: "POST",
@@ -75,6 +95,7 @@ export function useCreateAccount() {
           currency: newAccount.currency,
           balance: newAccount.balance,
           is_active: true,
+          exclude_from_free: newAccount.exclude_from_free || false,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
@@ -96,6 +117,8 @@ export function useCreateAccount() {
       queryClient.invalidateQueries({ queryKey: ["pools"] });
       // Invalidate free balance
       queryClient.invalidateQueries({ queryKey: ["pools", "freeBalance"] });
+      // Invalidate total balance
+      queryClient.invalidateQueries({ queryKey: accountKeys.balance() });
     },
   });
 }
@@ -151,6 +174,8 @@ export function useUpdateAccount() {
       queryClient.invalidateQueries({ queryKey: ["pools"] });
       // Invalidate free balance to recalculate when exclude_from_free changes
       queryClient.invalidateQueries({ queryKey: ["pools", "freeBalance"] });
+      // Invalidate total balance
+      queryClient.invalidateQueries({ queryKey: accountKeys.balance() });
     },
   });
 }
@@ -198,6 +223,8 @@ export function useArchiveAccount() {
       queryClient.invalidateQueries({ queryKey: ["pools"] });
       // Invalidate free balance
       queryClient.invalidateQueries({ queryKey: ["pools", "freeBalance"] });
+      // Invalidate total balance
+      queryClient.invalidateQueries({ queryKey: accountKeys.balance() });
     },
   });
 }
@@ -245,6 +272,8 @@ export function useRestoreAccount() {
       queryClient.invalidateQueries({ queryKey: ["pools"] });
       // Invalidate free balance
       queryClient.invalidateQueries({ queryKey: ["pools", "freeBalance"] });
+      // Invalidate total balance
+      queryClient.invalidateQueries({ queryKey: accountKeys.balance() });
     },
   });
 }
@@ -290,6 +319,8 @@ export function usePermanentDeleteAccount() {
       queryClient.invalidateQueries({ queryKey: ["pools"] });
       // Invalidate free balance
       queryClient.invalidateQueries({ queryKey: ["pools", "freeBalance"] });
+      // Invalidate total balance
+      queryClient.invalidateQueries({ queryKey: accountKeys.balance() });
     },
   });
 }
