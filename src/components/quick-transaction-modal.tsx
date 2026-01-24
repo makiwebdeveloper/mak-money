@@ -1,13 +1,17 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Database } from '@/lib/types/database';
-import { formatNumber } from '@/lib/utils';
-import { useAccounts } from '@/lib/hooks/useAccounts';
-import { useCreateTransaction } from '@/lib/hooks/useTransactions';
-import { useFreeBalance } from '@/lib/hooks/usePools';
+import { useState, useEffect } from "react";
+import { Database } from "@/lib/types/database";
+import { formatNumber } from "@/lib/utils";
+import { useAccounts } from "@/lib/hooks/useAccounts";
+import { useCreateTransaction } from "@/lib/hooks/useTransactions";
+import { useFreeBalance } from "@/lib/hooks/usePools";
+import {
+  EXPENSE_CATEGORIES,
+  INCOME_CATEGORIES,
+} from "@/lib/constants/categories";
 
-type Account = Database['public']['Tables']['accounts']['Row'];
+type Account = Database["public"]["Tables"]["accounts"]["Row"];
 
 interface QuickTransactionModalProps {
   isOpen: boolean;
@@ -18,11 +22,11 @@ export default function QuickTransactionModal({
   isOpen,
   onClose,
 }: QuickTransactionModalProps) {
-  const [type, setType] = useState<'income' | 'expense'>('expense');
-  const [amount, setAmount] = useState('');
-  const [accountId, setAccountId] = useState('');
-  const [category, setCategory] = useState('');
-  const [description, setDescription] = useState('');
+  const [type, setType] = useState<"income" | "expense">("expense");
+  const [amount, setAmount] = useState("");
+  const [accountId, setAccountId] = useState("");
+  const [category, setCategory] = useState("");
+  const [description, setDescription] = useState("");
 
   const { data: accounts = [] } = useAccounts();
   const { data: freeBalance = 0 } = useFreeBalance();
@@ -32,7 +36,9 @@ export default function QuickTransactionModal({
     if (isOpen && accounts.length > 0 && !accountId) {
       setAccountId(accounts[0].id);
     }
-  }, [isOpen, accounts, accountId]);
+    // Reset category when type changes
+    setCategory("");
+  }, [isOpen, accounts, accountId, type]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,17 +47,17 @@ export default function QuickTransactionModal({
     const amountValue = Number(amount);
 
     if (!amount || amountValue <= 0) {
-      alert('Please enter a valid amount');
+      alert("Please enter a valid amount");
       return;
     }
 
     if (!accountId) {
-      alert('Please select an account');
+      alert("Please select an account");
       return;
     }
 
     // Check free funds for expenses
-    if (type === 'expense' && amountValue > freeBalance) {
+    if (type === "expense" && amountValue > freeBalance) {
       const shouldContinue = confirm(
         `⚠️ Insufficient free funds!\n\n` +
           `Available: ${formatNumber(freeBalance)}\n` +
@@ -67,19 +73,19 @@ export default function QuickTransactionModal({
       await createTransaction.mutateAsync({
         type,
         amount: amountValue,
-        currency: selectedAccount?.currency || 'USD',
+        currency: selectedAccount?.currency || "USD",
         account_id: accountId,
         category: category || undefined,
         description: description || undefined,
       });
 
-      setAmount('');
-      setCategory('');
-      setDescription('');
+      setAmount("");
+      setCategory("");
+      setDescription("");
       onClose();
     } catch (error: any) {
-      console.error('Error creating transaction:', error);
-      alert(`Error: ${error.message || 'Failed to create transaction'}`);
+      console.error("Error creating transaction:", error);
+      alert(`Error: ${error.message || "Failed to create transaction"}`);
     }
   };
 
@@ -118,10 +124,10 @@ export default function QuickTransactionModal({
           </button>
         </div>
 
-        {type === 'expense' && freeBalance >= 0 && (
+        {type === "expense" && freeBalance >= 0 && (
           <div className="glass mb-4 sm:mb-5 rounded-lg p-2 sm:p-3 border border-accent/20">
             <p className="text-xs text-foreground">
-              Free:{' '}
+              Free:{" "}
               <span className="font-bold text-accent text-sm">
                 {formatNumber(freeBalance)}
               </span>
@@ -138,22 +144,22 @@ export default function QuickTransactionModal({
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setType('income')}
+                onClick={() => setType("income")}
                 className={`smooth-transition rounded-lg px-2 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm ${
-                  type === 'income'
-                    ? 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30'
-                    : 'glass hover:shadow-md'
+                  type === "income"
+                    ? "bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30"
+                    : "glass hover:shadow-md"
                 }`}
               >
                 Income
               </button>
               <button
                 type="button"
-                onClick={() => setType('expense')}
+                onClick={() => setType("expense")}
                 className={`smooth-transition rounded-lg px-2 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm ${
-                  type === 'expense'
-                    ? 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30'
-                    : 'glass hover:shadow-md'
+                  type === "expense"
+                    ? "bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30"
+                    : "glass hover:shadow-md"
                 }`}
               >
                 Expense
@@ -213,14 +219,25 @@ export default function QuickTransactionModal({
             >
               Category
             </label>
-            <input
+            <select
               id="category"
-              type="text"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="glass-sm mobile-input w-full rounded-lg px-3 py-2 sm:py-2.5 text-sm sm:text-base text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
-              placeholder="Food, transport..."
-            />
+              className="glass-sm mobile-input w-full rounded-lg px-3 py-2 sm:py-2.5 text-sm sm:text-base text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
+            >
+              <option value="">Select category</option>
+              {type === "expense"
+                ? EXPENSE_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))
+                : INCOME_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+            </select>
           </div>
 
           {/* Description */}
@@ -256,7 +273,7 @@ export default function QuickTransactionModal({
               className="flex-1 smooth-transition rounded-lg bg-linear-to-r from-accent to-accent/80 px-3 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm text-white hover:shadow-lg active:scale-95 disabled:opacity-50"
               disabled={createTransaction.isPending}
             >
-              {createTransaction.isPending ? 'Creating...' : 'Add'}
+              {createTransaction.isPending ? "Creating..." : "Add"}
             </button>
           </div>
         </form>
