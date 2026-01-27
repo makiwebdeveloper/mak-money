@@ -14,20 +14,17 @@ const navItems = [
 export function Navigation() {
   const pathname = usePathname();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [swipeIndex, setSwipeIndex] = useState(0);
 
-  // Update current index based on pathname
-  useEffect(() => {
-    const item = navItems.find((item) => item.href === pathname);
-    if (item) {
-      setCurrentIndex(item.index);
-    }
-  }, [pathname]);
+  // Calculate current index based on pathname
+  const pathItem = navItems.find((item) => item.href === pathname);
+  const currentIndex =
+    swipeIndex !== 0 && pathname === "/" ? swipeIndex : (pathItem?.index ?? 0);
 
   // Listen for swipe index changes
   useEffect(() => {
     const handleSwipeChange = (e: CustomEvent) => {
-      setCurrentIndex(e.detail.index);
+      setSwipeIndex(e.detail.index);
     };
 
     window.addEventListener("swipeIndexChange" as any, handleSwipeChange);
@@ -57,7 +54,7 @@ export function Navigation() {
           <div className="flex items-center gap-2 sm:gap-4">
             <Link
               href="/"
-              className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-gray-900 via-accent to-gray-900 dark:from-white dark:via-accent dark:to-white bg-clip-text text-transparent transition-all hover:scale-105"
+              className="text-xl sm:text-2xl font-bold bg-linear-to-r from-gray-900 via-accent to-gray-900 dark:from-white dark:via-accent dark:to-white bg-clip-text text-transparent transition-all hover:scale-105"
             >
               Mak Money
             </Link>
@@ -72,7 +69,7 @@ export function Navigation() {
                     href={item.href}
                     className={`smooth-transition rounded-lg px-4 py-2 text-sm font-medium ${
                       isActive
-                        ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-md"
+                        ? "bg-linear-to-r from-primary to-primary/80 text-white shadow-md"
                         : "text-foreground hover:bg-white/30 dark:hover:bg-white/10 hover:shadow-md"
                     }`}
                   >
@@ -85,7 +82,7 @@ export function Navigation() {
             <div className="relative">
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="smooth-transition rounded-full w-10 h-10 flex items-center justify-center bg-gradient-to-r from-accent to-accent/80 text-white shadow-md hover:shadow-lg"
+                className="smooth-transition rounded-full w-10 h-10 flex items-center justify-center bg-linear-to-r from-accent to-accent/80 text-white shadow-md hover:shadow-lg"
                 title="Profile"
               >
                 <svg
