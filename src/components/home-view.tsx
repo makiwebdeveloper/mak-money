@@ -5,6 +5,7 @@ import { CurrencyCode } from '@/lib/constants/currencies';
 import { formatNumber } from '@/lib/utils';
 import { useFreeBalance } from '@/lib/hooks/usePools';
 import { useTotalBalance } from '@/lib/hooks/useAccounts';
+import { useEffect, useState } from 'react';
 
 interface HomeViewProps {
   currency: CurrencyCode;
@@ -15,17 +16,41 @@ interface HomeViewProps {
 }
 
 export function HomeView({
-  currency,
+  currency: initialCurrency,
   totalBalance: initialTotalBalance,
   freeBalance: initialFreeBalance,
   accountsCount: initialAccountsCount,
   recentTransactions,
 }: HomeViewProps) {
-  // Use react-query hooks for live updates
-  const { data: freeBalance = initialFreeBalance } = useFreeBalance();
-  const { data: balanceData } = useTotalBalance();
-  const totalBalance = balanceData?.totalBalance ?? initialTotalBalance;
-  const accountsCount = balanceData?.accountsCount ?? initialAccountsCount;
+  // Use react-query hooks for live updates with encrypted data
+  const { data: freeBalanceData, isLoading: freeLoading } = useFreeBalance();
+  const { data: balanceData, isLoading: balanceLoading } = useTotalBalance();
+
+  // State for decrypted values
+  const [totalBalance, setTotalBalance] = useState(initialTotalBalance);
+  const [freeBalance, setFreeBalance] = useState(initialFreeBalance);
+  const [accountsCount, setAccountsCount] = useState(initialAccountsCount);
+  const [currency, setCurrency] = useState(initialCurrency);
+  const [isDecrypting, setIsDecrypting] = useState(true);
+
+  // Update state when data is decrypted
+  useEffect(() => {
+    if (balanceData && !balanceLoading) {
+      setTotalBalance(balanceData.totalBalance);
+      setAccountsCount(balanceData.accountsCount);
+      setCurrency(balanceData.currency as CurrencyCode);
+      setIsDecrypting(false);
+    }
+  }, [balanceData, balanceLoading]);
+
+  useEffect(() => {
+    if (freeBalanceData !== undefined && !freeLoading) {
+      setFreeBalance(freeBalanceData);
+    }
+  }, [freeBalanceData, freeLoading]);
+
+  const isLoading = balanceLoading || freeLoading || isDecrypting;
+
   return (
     <div className="min-h-full bg-gradient-to-br from-background to-background/95 px-3 sm:px-4 py-6">
       {/* Currency indicator */}
@@ -49,10 +74,16 @@ export function HomeView({
               <div className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
                 Total Balance
               </div>
+              {isLoading && (
+                <div className="flex items-center gap-1 text-xs text-blue-600">
+                  <div className="h-1 w-1 rounded-full bg-blue-600 animate-pulse"></div>
+                  <span>Decrypting...</span>
+                </div>
+              )}
               <div className="flex-1 h-px bg-gradient-to-r from-muted-foreground/30 to-transparent"></div>
             </div>
             <div className="text-4xl sm:text-5xl font-bold text-foreground mb-2">
-              {formatNumber(totalBalance)}
+              {isLoading ? '••••••' : formatNumber(totalBalance)}
             </div>
             <div className="text-xl sm:text-2xl font-semibold text-accent mb-4">
               {currency}
@@ -75,10 +106,16 @@ export function HomeView({
               <div className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
                 Free Funds
               </div>
+              {isLoading && (
+                <div className="flex items-center gap-1 text-xs text-green-600">
+                  <div className="h-1 w-1 rounded-full bg-green-600 animate-pulse"></div>
+                  <span>Decrypting...</span>
+                </div>
+              )}
               <div className="flex-1 h-px bg-gradient-to-r from-muted-foreground/30 to-transparent"></div>
             </div>
             <div className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 dark:from-green-400 dark:to-emerald-300 bg-clip-text text-transparent mb-2">
-              {formatNumber(freeBalance)}
+              {isLoading ? '••••••' : formatNumber(freeBalance)}
             </div>
             <div className="text-xl sm:text-2xl font-semibold text-accent mb-4">
               {currency}

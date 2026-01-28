@@ -80,6 +80,7 @@ export function useCreateTransaction() {
           to_account_id: newTransaction.to_account_id || null,
           category: newTransaction.category || null,
           description: newTransaction.description || null,
+          encrypted_data: null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           transaction_date: new Date().toISOString(),

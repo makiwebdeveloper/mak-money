@@ -191,7 +191,7 @@ export default function PoolsClient({
                             onClick={() =>
                               setEditingPool({
                                 id: pool.id,
-                                name: pool.name,
+                                name: pool.name || 'Unnamed Pool',
                                 amount: getPoolBalance(pool.id),
                               })
                             }
@@ -212,7 +212,7 @@ export default function PoolsClient({
                             onClick={() =>
                               setDeleteConfirm({
                                 id: pool.id,
-                                name: pool.name,
+                                name: pool.name || 'Unnamed Pool',
                               })
                             }
                             disabled={isLoading}

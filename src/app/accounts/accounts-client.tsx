@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Database } from '@/lib/types/database';
+import { Database, DecryptedAccount } from '@/lib/types/database';
 import { CURRENCIES, CurrencyCode } from '@/lib/constants/currencies';
 import { AccountsSkeleton } from '@/components/accounts-skeleton';
 import ConfirmDeleteModal from '@/components/confirm-delete-modal';
@@ -12,14 +12,10 @@ import {
   usePermanentDeleteAccount,
 } from '@/lib/hooks/useAccounts';
 
-type Account = Database['public']['Tables']['accounts']['Row'] & {
-  convertedBalance?: number;
-  defaultCurrency?: string;
-};
 type AccountType = Database['public']['Tables']['accounts']['Row']['type'];
 
 interface AccountsClientProps {
-  initialAccounts: Account[];
+  initialAccounts: DecryptedAccount[];
   defaultCurrency: string;
 }
 
@@ -68,7 +64,10 @@ export default function AccountsClient({
     }
   };
 
-  const handleUpdate = async (id: string, updates: Partial<Account>) => {
+  const handleUpdate = async (
+    id: string,
+    updates: Partial<DecryptedAccount>,
+  ) => {
     try {
       await updateAccount.mutateAsync({ id, updates });
       setEditingId(null);
@@ -272,25 +271,11 @@ export default function AccountsClient({
                         <div className="mt-1.5 sm:mt-2">
                           <p className="text-xl sm:text-2xl font-bold text-accent">
                             {getCurrencySymbol(account.currency)}{' '}
-                            {account.balance.toLocaleString('en-US', {
+                            {(account.balance ?? 0).toLocaleString('en-US', {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })}
                           </p>
-                          {account.currency !== defaultCurrency &&
-                            account.convertedBalance !== undefined && (
-                              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                                ≈ {getCurrencySymbol(defaultCurrency)}{' '}
-                                {account.convertedBalance.toLocaleString(
-                                  'en-US',
-                                  {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  },
-                                )}{' '}
-                                ({defaultCurrency})
-                              </p>
-                            )}
                         </div>
                         {/* Toggle exclude_from_free */}
                         <div className="mt-2 sm:mt-3 flex items-center gap-2">
@@ -319,7 +304,7 @@ export default function AccountsClient({
                         onClick={() =>
                           setDeleteConfirm({
                             id: account.id,
-                            name: account.name,
+                            name: account.name || 'Unnamed Account',
                           })
                         }
                         disabled={loading}

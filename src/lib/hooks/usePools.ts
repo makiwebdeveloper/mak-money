@@ -98,6 +98,7 @@ export function useCreatePool() {
           is_active: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          encrypted_data: null,
           // Make random color and icon for optimistic update
           color: "#d4d4d4",
           icon: "piggy-bank",

@@ -1,7 +1,13 @@
+/**
+ * EXAMPLE: Encrypted version of accounts API route
+ * 
+ * This demonstrates how to modify API routes to work with encrypted data.
+ * The server only stores and retrieves encrypted data without decrypting it.
+ */
+
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-import { convertCurrency } from "@/lib/constants/exchange-rates";
-import { CurrencyCode } from "@/lib/constants/currencies";
+import type { EncryptedData } from "@/lib/services/encryption-service";
 
 // GET /api/accounts - Get all active accounts for current user
 export async function GET() {
@@ -16,16 +22,16 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get user's default currency
+    // Get user's default currency (not encrypted)
     const { data: userData } = await supabase
       .from("users")
       .select("default_currency")
       .eq("id", user.id)
       .single();
 
-    const defaultCurrency = (userData?.default_currency ||
-      "USD") as CurrencyCode;
+    const defaultCurrency = userData?.default_currency || "USD";
 
+    // Fetch accounts with encrypted_data
     const { data: accounts, error } = await supabase
       .from("accounts")
       .select("*")
@@ -38,7 +44,7 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Server does NOT decrypt data - just passes encrypted_data to client
+    // Server does NOT decrypt data - just passes it to client
     // Client will decrypt using useAccountEncryption hook
     return NextResponse.json({
       accounts: accounts || [],
@@ -69,21 +75,10 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { encrypted_data, type, currency, exclude_from_free } = body;
 
-    // Validate encrypted_data
+    // Validate required fields
     if (!encrypted_data) {
       return NextResponse.json(
         { error: "Encrypted data is required" },
-        { status: 400 },
-      );
-    }
-
-    if (
-      !encrypted_data.ciphertext ||
-      !encrypted_data.iv ||
-      !encrypted_data.version
-    ) {
-      return NextResponse.json(
-        { error: "Invalid encrypted data format" },
         { status: 400 },
       );
     }
@@ -95,12 +90,24 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate encrypted_data structure
+    if (
+      !encrypted_data.ciphertext ||
+      !encrypted_data.iv ||
+      !encrypted_data.version
+    ) {
+      return NextResponse.json(
+        { error: "Invalid encrypted data format" },
+        { status: 400 },
+      );
+    }
+
     // Insert with encrypted_data (server never sees actual name/balance)
     const { data: account, error } = await supabase
       .from("accounts")
       .insert({
         user_id: user.id,
-        encrypted_data,
+        encrypted_data: encrypted_data as EncryptedData,
         type: type || "other",
         currency,
         exclude_from_free: exclude_from_free || false,
@@ -114,9 +121,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Note: No need to create allocation in free pool
-    // Free balance is calculated automatically as: Total Balance - Sum of Allocations
-
     return NextResponse.json({ account }, { status: 201 });
   } catch (error) {
     console.error("Error in accounts POST:", error);
@@ -126,3 +130,8 @@ export async function POST(request: Request) {
     );
   }
 }
+
+// Note: Update and Delete routes remain similar
+// - They operate on IDs and metadata only
+// - encrypted_data is updated/deleted as a whole blob
+// - Server never decrypts or interprets the content
