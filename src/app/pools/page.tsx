@@ -29,25 +29,9 @@ async function PoolsContent() {
 
   const defaultCurrency = userData.default_currency as CurrencyCode;
 
-  // Just fetch basic pools data - balances will be calculated by API endpoint
-  const { data: pools } = await supabase
-    .from("money_pools")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: true });
-
-  // Empty initial data - react-query will fetch from API with balances
-  // Empty initial data - react-query will fetch from API with balances
-  const poolBalances: Array<{ pool_id: string; total_amount: number }> = [];
-
-  return (
-    <PoolsClient
-      pools={pools || []}
-      poolBalances={poolBalances}
-      currency={defaultCurrency}
-      userId={user.id}
-    />
-  );
+  // Don't pass initial data - let client fetch and decrypt
+  // This avoids hydration mismatch since server can't decrypt the data
+  return <PoolsClient currency={defaultCurrency} userId={user.id} />;
 }
 
 export default function PoolsPage() {

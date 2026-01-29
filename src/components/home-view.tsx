@@ -1,11 +1,12 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { CurrencyCode } from '@/lib/constants/currencies';
-import { formatNumber } from '@/lib/utils';
-import { useFreeBalance } from '@/lib/hooks/usePools';
-import { useTotalBalance } from '@/lib/hooks/useAccounts';
-import { useEffect, useState } from 'react';
+import Link from "next/link";
+import { CurrencyCode } from "@/lib/constants/currencies";
+import { formatNumber } from "@/lib/utils";
+import { useFreeBalance } from "@/lib/hooks/usePools";
+import { useTotalBalance } from "@/lib/hooks/useAccounts";
+import { useTransactions } from "@/lib/hooks/useTransactions";
+import { useEffect, useState } from "react";
 
 interface HomeViewProps {
   currency: CurrencyCode;
@@ -25,6 +26,7 @@ export function HomeView({
   // Use react-query hooks for live updates with encrypted data
   const { data: freeBalanceData, isLoading: freeLoading } = useFreeBalance();
   const { data: balanceData, isLoading: balanceLoading } = useTotalBalance();
+  const { data: transactionsData } = useTransactions();
 
   // State for decrypted values
   const [totalBalance, setTotalBalance] = useState(initialTotalBalance);
@@ -49,6 +51,9 @@ export function HomeView({
     }
   }, [freeBalanceData, freeLoading]);
 
+  // Use decrypted transactions or fallback to empty array
+  const displayTransactions = transactionsData?.slice(0, 5) || [];
+
   const isLoading = balanceLoading || freeLoading || isDecrypting;
 
   return (
@@ -57,7 +62,7 @@ export function HomeView({
       <div className="mb-4 sm:mb-6 flex items-center justify-end">
         <div className="glass-sm px-3 py-1.5 rounded-full">
           <span className="text-xs font-semibold text-muted-foreground">
-            Currency:{' '}
+            Currency:{" "}
           </span>
           <span className="text-xs font-bold text-accent">{currency}</span>
         </div>
@@ -83,7 +88,7 @@ export function HomeView({
               <div className="flex-1 h-px bg-gradient-to-r from-muted-foreground/30 to-transparent"></div>
             </div>
             <div className="text-4xl sm:text-5xl font-bold text-foreground mb-2">
-              {isLoading ? '••••••' : formatNumber(totalBalance)}
+              {isLoading ? "••••••" : formatNumber(totalBalance)}
             </div>
             <div className="text-xl sm:text-2xl font-semibold text-accent mb-4">
               {currency}
@@ -91,7 +96,7 @@ export function HomeView({
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <div className="w-2 h-2 rounded-full bg-blue-500"></div>
               <span>
-                {accountsCount} {accountsCount === 1 ? 'account' : 'accounts'}
+                {accountsCount} {accountsCount === 1 ? "account" : "accounts"}
               </span>
             </div>
           </div>
@@ -115,7 +120,7 @@ export function HomeView({
               <div className="flex-1 h-px bg-gradient-to-r from-muted-foreground/30 to-transparent"></div>
             </div>
             <div className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 dark:from-green-400 dark:to-emerald-300 bg-clip-text text-transparent mb-2">
-              {isLoading ? '••••••' : formatNumber(freeBalance)}
+              {isLoading ? "••••••" : formatNumber(freeBalance)}
             </div>
             <div className="text-xl sm:text-2xl font-semibold text-accent mb-4">
               {currency}
@@ -180,7 +185,7 @@ export function HomeView({
       </div>
 
       {/* Recent Transactions */}
-      {recentTransactions && recentTransactions.length > 0 && (
+      {displayTransactions && displayTransactions.length > 0 && (
         <div className="card-glass mb-6 p-4">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-lg font-bold text-foreground">
@@ -188,7 +193,7 @@ export function HomeView({
             </h2>
           </div>
           <div className="space-y-2">
-            {recentTransactions.map((tx) => (
+            {displayTransactions.map((tx) => (
               <div
                 key={tx.id}
                 className="glass-sm flex items-center justify-between rounded-xl p-2.5 transition-all hover:bg-white/50 dark:hover:bg-white/15"
@@ -196,45 +201,45 @@ export function HomeView({
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div
                     className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full font-bold text-base backdrop-blur-sm ${
-                      tx.type === 'income'
-                        ? 'bg-green-500/30 text-green-600 dark:text-green-400'
-                        : tx.type === 'expense'
-                          ? 'bg-red-500/30 text-red-600 dark:text-red-400'
-                          : 'bg-blue-500/30 text-blue-600 dark:text-blue-400'
+                      tx.type === "income"
+                        ? "bg-green-500/30 text-green-600 dark:text-green-400"
+                        : tx.type === "expense"
+                          ? "bg-red-500/30 text-red-600 dark:text-red-400"
+                          : "bg-blue-500/30 text-blue-600 dark:text-blue-400"
                     }`}
                   >
-                    {tx.type === 'income'
-                      ? '↓'
-                      : tx.type === 'expense'
-                        ? '↑'
-                        : '↔'}
+                    {tx.type === "income"
+                      ? "↓"
+                      : tx.type === "expense"
+                        ? "↑"
+                        : "↔"}
                   </div>
                   <div className="min-w-0">
                     <div className="font-semibold text-foreground text-xs truncate">
-                      {tx.category || 'No category'}
+                      {tx.category || "No category"}
                     </div>
                     <div className="text-xs text-muted-foreground truncate">
-                      {tx.accounts?.name} •{' '}
+                      {tx.accounts?.name} •{" "}
                       {new Date(tx.transaction_date).toLocaleDateString(
-                        'ru-RU',
+                        "ru-RU",
                       )}
                     </div>
                   </div>
                 </div>
                 <div
                   className={`text-sm font-bold flex-shrink-0 ml-2 ${
-                    tx.type === 'income'
-                      ? 'text-green-600 dark:text-green-400'
-                      : tx.type === 'expense'
-                        ? 'text-red-600 dark:text-red-400'
-                        : 'text-blue-600 dark:text-blue-400'
+                    tx.type === "income"
+                      ? "text-green-600 dark:text-green-400"
+                      : tx.type === "expense"
+                        ? "text-red-600 dark:text-red-400"
+                        : "text-blue-600 dark:text-blue-400"
                   }`}
                 >
-                  {tx.type === 'income'
-                    ? '+'
-                    : tx.type === 'expense'
-                      ? '-'
-                      : ''}
+                  {tx.type === "income"
+                    ? "+"
+                    : tx.type === "expense"
+                      ? "-"
+                      : ""}
                   {formatNumber(tx.amount)}
                 </div>
               </div>

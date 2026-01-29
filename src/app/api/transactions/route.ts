@@ -73,20 +73,18 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       type,
-      amount,
       currency,
       account_id,
       from_account_id,
       to_account_id,
-      category,
-      description,
       transaction_date,
+      encrypted_data,
     } = body;
 
     // Validate required fields
-    if (!type || !amount || !currency) {
+    if (!type || !encrypted_data || !currency) {
       return NextResponse.json(
-        { error: "Missing required fields: type, amount, currency" },
+        { error: "Missing required fields: type, encrypted_data, currency" },
         { status: 400 },
       );
     }
@@ -122,13 +120,11 @@ export async function POST(req: NextRequest) {
       .insert({
         user_id: user.id,
         type,
-        amount,
         currency,
         account_id: type === "transfer" ? null : account_id,
         from_account_id: type === "transfer" ? from_account_id : null,
         to_account_id: type === "transfer" ? to_account_id : null,
-        category,
-        description,
+        encrypted_data,
         transaction_date: transaction_date || new Date().toISOString(),
       })
       .select()

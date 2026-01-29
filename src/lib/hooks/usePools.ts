@@ -142,6 +142,59 @@ export function useFreeBalance() {
   };
 }
 
+// Calculate excluded accounts balance (client-side only)
+// This calculates the total balance of accounts marked with exclude_from_free = true
+export function useExcludedAccountsBalance() {
+  const { data: accounts, isLoading: accountsLoading } = useAccounts();
+  const { data: defaultCurrency, isLoading: currencyLoading } = useUserCurrency();
+
+  const [excludedBalance, setExcludedBalance] = useState(0);
+  const [isConverting, setIsConverting] = useState(false);
+  const [hasExcludedAccounts, setHasExcludedAccounts] = useState(false);
+
+  useEffect(() => {
+    const calculateExcludedBalance = async () => {
+      if (!accounts || !defaultCurrency) return;
+
+      setIsConverting(true);
+      try {
+        // Calculate total balance from active accounts marked as excluded
+        let totalExcludedBalance = 0;
+        let hasExcluded = false;
+        
+        for (const account of accounts) {
+          if (account.is_active && account.exclude_from_free && account.balance) {
+            hasExcluded = true;
+            const converted = await convertCurrency(
+              account.balance,
+              account.currency as CurrencyCode,
+              defaultCurrency,
+            );
+            totalExcludedBalance += converted;
+          }
+        }
+
+        setHasExcludedAccounts(hasExcluded);
+        setExcludedBalance(Number(totalExcludedBalance.toFixed(2)));
+      } catch (error) {
+        console.error("Failed to calculate excluded accounts balance:", error);
+        setExcludedBalance(0);
+        setHasExcludedAccounts(false);
+      } finally {
+        setIsConverting(false);
+      }
+    };
+
+    calculateExcludedBalance();
+  }, [accounts, defaultCurrency]);
+
+  return {
+    data: excludedBalance,
+    hasExcludedAccounts,
+    isLoading: accountsLoading || currencyLoading || isConverting,
+  };
+}
+
 // Create pool
 export function useCreatePool() {
   const queryClient = useQueryClient();

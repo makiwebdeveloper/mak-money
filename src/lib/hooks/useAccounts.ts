@@ -52,7 +52,8 @@ export function useAccounts() {
 // Fetch total balance (calculated on client after decryption with currency conversion)
 export function useTotalBalance() {
   const { data: accounts, isLoading: accountsLoading } = useAccounts();
-  const { data: defaultCurrency, isLoading: currencyLoading } = useUserCurrency();
+  const { data: defaultCurrency, isLoading: currencyLoading } =
+    useUserCurrency();
 
   const [totalBalance, setTotalBalance] = useState(0);
   const [isConverting, setIsConverting] = useState(false);
@@ -60,7 +61,7 @@ export function useTotalBalance() {
   useEffect(() => {
     const convertBalances = async () => {
       if (!accounts || !defaultCurrency) return;
-      
+
       setIsConverting(true);
       try {
         let total = 0;
@@ -69,14 +70,14 @@ export function useTotalBalance() {
             const converted = await convertCurrency(
               account.balance,
               account.currency as CurrencyCode,
-              defaultCurrency
+              defaultCurrency,
             );
             total += converted;
           }
         }
         setTotalBalance(Number(total.toFixed(2)));
       } catch (error) {
-        console.error('Failed to convert currencies:', error);
+        console.error("Failed to convert currencies:", error);
       } finally {
         setIsConverting(false);
       }
@@ -88,7 +89,7 @@ export function useTotalBalance() {
   const accountsCount = accounts?.length || 0;
 
   return {
-    data: { totalBalance, currency: defaultCurrency || 'USD', accountsCount },
+    data: { totalBalance, currency: defaultCurrency || "USD", accountsCount },
     isLoading: accountsLoading || currencyLoading || isConverting,
   };
 }
@@ -181,6 +182,7 @@ export function useCreateAccount() {
 // Update account
 export function useUpdateAccount() {
   const queryClient = useQueryClient();
+  const { encryptAccount } = useAccountEncryption();
 
   return useMutation({
     mutationFn: async ({
@@ -190,10 +192,39 @@ export function useUpdateAccount() {
       id: string;
       updates: Partial<DecryptedAccount>;
     }) => {
+      const payload: any = {};
+
+      // If name or balance are being updated, encrypt them
+      if (updates.name !== undefined || updates.balance !== undefined) {
+        // Get current account data to merge with updates
+        const currentAccounts = queryClient.getQueryData<DecryptedAccount[]>(
+          accountKeys.list(),
+        );
+        const currentAccount = currentAccounts?.find((acc) => acc.id === id);
+
+        if (!currentAccount) {
+          throw new Error("Account not found in cache");
+        }
+
+        const nameToEncrypt = updates.name ?? currentAccount.name;
+        const balanceToEncrypt = updates.balance ?? currentAccount.balance;
+
+        payload.encrypted_data = await encryptAccount(
+          nameToEncrypt,
+          balanceToEncrypt,
+        );
+      }
+
+      // Add non-encrypted fields
+      if (updates.type !== undefined) payload.type = updates.type;
+      if (updates.currency !== undefined) payload.currency = updates.currency;
+      if (updates.exclude_from_free !== undefined)
+        payload.exclude_from_free = updates.exclude_from_free;
+
       const response = await fetch(`/api/accounts/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {

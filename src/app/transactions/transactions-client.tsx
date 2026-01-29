@@ -1,130 +1,132 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Database } from '@/lib/types/database';
-import { formatNumber } from '@/lib/utils';
-import { TransactionsSkeleton } from '@/components/transactions-skeleton';
-import { CurrencyDisplay } from '@/components/ui/currency-display';
-import { CurrencyCode } from '@/lib/constants/currencies';
+import { useState } from "react";
+import { Database } from "@/lib/types/database";
+import { formatNumber } from "@/lib/utils";
+import { TransactionsSkeleton } from "@/components/transactions-skeleton";
+import { CurrencyDisplay } from "@/components/ui/currency-display";
+import { CurrencyCode } from "@/lib/constants/currencies";
 import {
   useTransactions,
   useCreateTransaction,
-} from '@/lib/hooks/useTransactions';
-import { useAccounts } from '@/lib/hooks/useAccounts';
+} from "@/lib/hooks/useTransactions";
+import { useAccounts } from "@/lib/hooks/useAccounts";
 import {
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
-} from '@/lib/constants/categories';
+} from "@/lib/constants/categories";
 
-type Transaction = Database['public']['Tables']['transactions']['Row'];
-type Account = Database['public']['Tables']['accounts']['Row'];
+type Transaction = Database["public"]["Tables"]["transactions"]["Row"];
+type Account = Database["public"]["Tables"]["accounts"]["Row"];
 
-interface TransactionsClientProps {
-  initialTransactions: Transaction[];
-  accounts: Account[];
-}
-
-export default function TransactionsClient({
-  initialTransactions,
-  accounts: initialAccounts,
-}: TransactionsClientProps) {
-  // Use react-query hooks
-  const { data: transactions = initialTransactions } = useTransactions();
-  const { data: accounts = initialAccounts } = useAccounts();
+export default function TransactionsClient() {
+  // Use react-query hooks - fetch and decrypt on client only
+  const { data: transactions, isLoading: transactionsLoading } =
+    useTransactions();
+  const { data: accounts, isLoading: accountsLoading } = useAccounts();
   const createTransaction = useCreateTransaction();
 
-  const [type, setType] = useState<'income' | 'expense' | 'transfer'>('income');
-  const [amount, setAmount] = useState('');
-  const [accountId, setAccountId] = useState('');
-  const [fromAccountId, setFromAccountId] = useState('');
-  const [toAccountId, setToAccountId] = useState('');
-  const [category, setCategory] = useState('');
-  const [description, setDescription] = useState('');
+  const [type, setType] = useState<"income" | "expense" | "transfer">("income");
+  const [amount, setAmount] = useState("");
+  const [accountId, setAccountId] = useState("");
+  const [fromAccountId, setFromAccountId] = useState("");
+  const [toAccountId, setToAccountId] = useState("");
+  const [category, setCategory] = useState("");
+  const [description, setDescription] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+
+  // Show loading state while fetching and decrypting data
+  if (transactionsLoading || accountsLoading) {
+    return <TransactionsSkeleton />;
+  }
+
+  // Ensure we have arrays to work with
+  const safeAccounts = accounts || [];
+  const safeTransactions = transactions || [];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (createTransaction.isPending) return;
 
     if (!amount || Number(amount) <= 0) {
-      alert('Please enter a valid amount');
+      alert("Please enter a valid amount");
       return;
     }
 
-    if (type === 'transfer') {
+    if (type === "transfer") {
       if (!fromAccountId || !toAccountId) {
-        alert('Please select both accounts for transfer');
+        alert("Please select both accounts for transfer");
         return;
       }
       if (fromAccountId === toAccountId) {
-        alert('Cannot transfer to the same account');
+        alert("Cannot transfer to the same account");
         return;
       }
     } else {
       if (!accountId) {
-        alert('Please select an account');
+        alert("Please select an account");
         return;
       }
     }
 
     try {
-      const selectedAccount = accounts.find((a) =>
-        type === 'transfer' ? a.id === fromAccountId : a.id === accountId,
+      const selectedAccount = safeAccounts.find((a) =>
+        type === "transfer" ? a.id === fromAccountId : a.id === accountId,
       );
 
       await createTransaction.mutateAsync({
         type,
         amount: Number(amount),
-        currency: selectedAccount?.currency || 'USD',
-        account_id: type === 'transfer' ? undefined : accountId,
-        from_account_id: type === 'transfer' ? fromAccountId : undefined,
-        to_account_id: type === 'transfer' ? toAccountId : undefined,
+        currency: selectedAccount?.currency || "USD",
+        account_id: type === "transfer" ? undefined : accountId,
+        from_account_id: type === "transfer" ? fromAccountId : undefined,
+        to_account_id: type === "transfer" ? toAccountId : undefined,
         category: category || undefined,
         description: description || undefined,
       });
 
       // Reset form
-      setAmount('');
-      setCategory('');
-      setDescription('');
+      setAmount("");
+      setCategory("");
+      setDescription("");
       setIsCreating(false);
     } catch (error: any) {
-      console.error('Error creating transaction:', error);
-      alert(`Error: ${error.message || 'Failed to create transaction'}`);
+      console.error("Error creating transaction:", error);
+      alert(`Error: ${error.message || "Failed to create transaction"}`);
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   const getTransactionSign = (type: string) => {
     switch (type) {
-      case 'income':
-        return '+';
-      case 'expense':
-        return '-';
-      case 'transfer':
-        return '→';
+      case "income":
+        return "+";
+      case "expense":
+        return "-";
+      case "transfer":
+        return "→";
       default:
-        return '';
+        return "";
     }
   };
 
   const getTransactionColor = (type: string) => {
     switch (type) {
-      case 'income':
-        return 'text-green-600 dark:text-green-400';
-      case 'expense':
-        return 'text-red-600 dark:text-red-400';
-      case 'transfer':
-        return 'text-accent';
+      case "income":
+        return "text-green-600 dark:text-green-400";
+      case "expense":
+        return "text-red-600 dark:text-red-400";
+      case "transfer":
+        return "text-accent";
       default:
-        return 'text-foreground';
+        return "text-foreground";
     }
   };
 
@@ -140,11 +142,11 @@ export default function TransactionsClient({
             onClick={() => setIsCreating((v) => !v)}
             className={`smooth-transition rounded-lg sm:rounded-xl px-3 sm:px-6 py-2 sm:py-2.5 font-semibold whitespace-nowrap text-xs sm:text-sm touch-target ${
               isCreating
-                ? 'glass hover:shadow-md text-foreground'
-                : 'bg-gradient-to-r from-accent to-accent/80 text-white hover:shadow-lg active:scale-95'
+                ? "glass hover:shadow-md text-foreground"
+                : "bg-gradient-to-r from-accent to-accent/80 text-white hover:shadow-lg active:scale-95"
             }`}
           >
-            {isCreating ? 'Cancel' : 'New Transaction'}
+            {isCreating ? "Cancel" : "New Transaction"}
           </button>
         </div>
 
@@ -163,33 +165,33 @@ export default function TransactionsClient({
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
-                    onClick={() => setType('income')}
+                    onClick={() => setType("income")}
                     className={`smooth-transition rounded-lg sm:rounded-xl px-3 py-2 sm:py-2.5 font-semibold text-xs touch-target ${
-                      type === 'income'
-                        ? 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30'
-                        : 'glass hover:shadow-md'
+                      type === "income"
+                        ? "bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30"
+                        : "glass hover:shadow-md"
                     }`}
                   >
                     Income
                   </button>
                   <button
                     type="button"
-                    onClick={() => setType('expense')}
+                    onClick={() => setType("expense")}
                     className={`smooth-transition rounded-lg sm:rounded-xl px-3 py-2 sm:py-2.5 font-semibold text-xs touch-target ${
-                      type === 'expense'
-                        ? 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30'
-                        : 'glass hover:shadow-md'
+                      type === "expense"
+                        ? "bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30"
+                        : "glass hover:shadow-md"
                     }`}
                   >
                     Expense
                   </button>
                   <button
                     type="button"
-                    onClick={() => setType('transfer')}
+                    onClick={() => setType("transfer")}
                     className={`smooth-transition rounded-lg sm:rounded-xl px-3 py-2 sm:py-2.5 font-semibold text-xs touch-target ${
-                      type === 'transfer'
-                        ? 'bg-gradient-to-br from-accent to-accent/80 text-white shadow-lg shadow-accent/30'
-                        : 'glass hover:shadow-md'
+                      type === "transfer"
+                        ? "bg-gradient-to-br from-accent to-accent/80 text-white shadow-lg shadow-accent/30"
+                        : "glass hover:shadow-md"
                     }`}
                   >
                     Transfer
@@ -214,7 +216,7 @@ export default function TransactionsClient({
               </div>
 
               {/* Account Selection */}
-              {type === 'transfer' ? (
+              {type === "transfer" ? (
                 <>
                   <div>
                     <label className="mb-2 sm:mb-3 block text-xs sm:text-sm font-semibold text-foreground">
@@ -227,9 +229,9 @@ export default function TransactionsClient({
                       required
                     >
                       <option value="">Select account</option>
-                      {accounts.map((account) => (
+                      {safeAccounts.map((account) => (
                         <option key={account.id} value={account.id}>
-                          {account.name} ({account.currency}{' '}
+                          {account.name} ({account.currency}{" "}
                           {formatNumber(account.balance ?? 0)})
                         </option>
                       ))}
@@ -246,9 +248,9 @@ export default function TransactionsClient({
                       required
                     >
                       <option value="">Select account</option>
-                      {accounts.map((account) => (
+                      {safeAccounts.map((account) => (
                         <option key={account.id} value={account.id}>
-                          {account.name} ({account.currency}{' '}
+                          {account.name} ({account.currency}{" "}
                           {formatNumber(account.balance ?? 0)})
                         </option>
                       ))}
@@ -267,9 +269,9 @@ export default function TransactionsClient({
                     required
                   >
                     <option value="">Select account</option>
-                    {accounts.map((account) => (
+                    {safeAccounts.map((account) => (
                       <option key={account.id} value={account.id}>
-                        {account.name} ({account.currency}{' '}
+                        {account.name} ({account.currency}{" "}
                         {formatNumber(account.balance ?? 0)})
                       </option>
                     ))}
@@ -278,7 +280,7 @@ export default function TransactionsClient({
               )}
 
               {/* Category (optional) */}
-              {type !== 'transfer' && (
+              {type !== "transfer" && (
                 <div>
                   <label className="mb-2 sm:mb-3 block text-xs sm:text-sm font-semibold text-foreground">
                     Category
@@ -289,7 +291,7 @@ export default function TransactionsClient({
                     className="glass-sm mobile-input w-full rounded-lg sm:rounded-xl px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
                   >
                     <option value="">Select category</option>
-                    {type === 'expense'
+                    {type === "expense"
                       ? EXPENSE_CATEGORIES.map((cat) => (
                           <option key={cat} value={cat}>
                             {cat}
@@ -325,14 +327,14 @@ export default function TransactionsClient({
                 className="w-full smooth-transition rounded-xl bg-gradient-to-r from-accent to-accent/80 px-4 py-2.5 sm:py-3 font-semibold text-sm sm:text-base text-white hover:shadow-lg active:scale-95 disabled:opacity-50 touch-target"
               >
                 {createTransaction.isPending
-                  ? 'Creating...'
-                  : 'Create Transaction'}
+                  ? "Creating..."
+                  : "Create Transaction"}
               </button>
             </form>
           </div>
         )}
 
-        {accounts.length === 0 && (
+        {safeAccounts.length === 0 && (
           <div className="glass border-l-4 border-accent rounded-xl p-3 sm:p-4 mb-6">
             <p className="text-foreground font-semibold text-sm sm:text-base">
               ⚠️ Create an account first
@@ -344,9 +346,9 @@ export default function TransactionsClient({
         )}
 
         {/* Transactions List */}
-        {createTransaction.isPending && transactions.length === 0 ? (
+        {createTransaction.isPending && safeTransactions.length === 0 ? (
           <TransactionsSkeleton />
-        ) : transactions.length === 0 ? (
+        ) : safeTransactions.length === 0 ? (
           <div className="card-glass py-12 sm:py-16 text-center text-xs sm:text-base text-muted-foreground">
             No transactions yet
           </div>
@@ -374,7 +376,7 @@ export default function TransactionsClient({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/10">
-                  {transactions.map((transaction) => (
+                  {safeTransactions.map((transaction) => (
                     <tr
                       key={transaction.id}
                       className="hover:bg-white/5 smooth-transition"
@@ -386,17 +388,19 @@ export default function TransactionsClient({
                         <span
                           className={`capitalize font-semibold ${getTransactionColor(transaction.type)}`}
                         >
-                          {transaction.type === 'income'
-                            ? '✅ Income'
-                            : transaction.type === 'expense'
-                              ? '❌ Expense'
-                              : '→ Transfer'}
+                          {transaction.type === "income"
+                            ? "✅ Income"
+                            : transaction.type === "expense"
+                              ? "❌ Expense"
+                              : "→ Transfer"}
                         </span>
                       </td>
                       <td
                         className={`whitespace-nowrap px-6 py-4 text-sm font-bold ${getTransactionColor(transaction.type)}`}
                       >
-                        <span className="mr-1">{getTransactionSign(transaction.type)}</span>
+                        <span className="mr-1">
+                          {getTransactionSign(transaction.type)}
+                        </span>
                         <CurrencyDisplay
                           amount={transaction.amount ?? 0}
                           currency={transaction.currency as CurrencyCode}
@@ -404,10 +408,10 @@ export default function TransactionsClient({
                         />
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
-                        {transaction.category || '-'}
+                        {transaction.category || "-"}
                       </td>
                       <td className="px-6 py-4 text-sm text-muted-foreground">
-                        {transaction.description || '-'}
+                        {transaction.description || "-"}
                       </td>
                     </tr>
                   ))}

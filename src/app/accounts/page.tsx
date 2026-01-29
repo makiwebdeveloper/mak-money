@@ -26,36 +26,9 @@ async function AccountsContent() {
 
   const defaultCurrency = (profile?.default_currency || "USD") as CurrencyCode;
 
-  // Load all accounts (active and archived) on server (SSR)
-  const { data: accounts } = await supabase
-    .from("accounts")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: true });
-
-  // Add converted balance to each account
-  const accountsWithConversion = await Promise.all(
-    (accounts || []).map(async (account) => {
-      const convertedBalance = await convertCurrency(
-        account.balance,
-        account.currency as CurrencyCode,
-        defaultCurrency,
-      );
-
-      return {
-        ...account,
-        convertedBalance,
-        defaultCurrency,
-      };
-    }),
-  );
-
-  return (
-    <AccountsClient
-      initialAccounts={accountsWithConversion}
-      defaultCurrency={defaultCurrency}
-    />
-  );
+  // Don't pass initialAccounts - let client fetch and decrypt data
+  // This avoids hydration mismatch since server can't decrypt the data
+  return <AccountsClient defaultCurrency={defaultCurrency} />;
 }
 
 export default function AccountsPage() {

@@ -15,24 +15,9 @@ async function TransactionsContent() {
     redirect("/auth");
   }
 
-  const { data: transactions } = await supabase
-    .from("transactions")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("transaction_date", { ascending: false });
-
-  const { data: accounts } = await supabase
-    .from("accounts")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("is_active", true);
-
-  return (
-    <TransactionsClient
-      initialTransactions={transactions || []}
-      accounts={accounts || []}
-    />
-  );
+  // Don't pass initial data - let client fetch and decrypt
+  // This avoids hydration mismatch since server can't decrypt the data
+  return <TransactionsClient />;
 }
 
 export default function TransactionsPage() {

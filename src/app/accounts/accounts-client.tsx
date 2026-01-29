@@ -1,31 +1,29 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Database, DecryptedAccount } from '@/lib/types/database';
-import { CURRENCIES, CurrencyCode } from '@/lib/constants/currencies';
-import { AccountsSkeleton } from '@/components/accounts-skeleton';
-import ConfirmDeleteModal from '@/components/confirm-delete-modal';
-import { CurrencyDisplay } from '@/components/ui/currency-display';
+import { useState } from "react";
+import { Database, DecryptedAccount } from "@/lib/types/database";
+import { CURRENCIES, CurrencyCode } from "@/lib/constants/currencies";
+import { AccountsSkeleton } from "@/components/accounts-skeleton";
+import ConfirmDeleteModal from "@/components/confirm-delete-modal";
+import { CurrencyDisplay } from "@/components/ui/currency-display";
 import {
   useAccounts,
   useCreateAccount,
   useUpdateAccount,
   usePermanentDeleteAccount,
-} from '@/lib/hooks/useAccounts';
+} from "@/lib/hooks/useAccounts";
 
-type AccountType = Database['public']['Tables']['accounts']['Row']['type'];
+type AccountType = Database["public"]["Tables"]["accounts"]["Row"]["type"];
 
 interface AccountsClientProps {
-  initialAccounts: DecryptedAccount[];
   defaultCurrency: string;
 }
 
 export default function AccountsClient({
-  initialAccounts,
   defaultCurrency,
 }: AccountsClientProps) {
-  // Use react-query hooks
-  const { data: accounts = initialAccounts } = useAccounts();
+  // Use react-query hooks - fetch and decrypt data on client only
+  const { data: accounts, isLoading } = useAccounts();
   const createAccount = useCreateAccount();
   const updateAccount = useUpdateAccount();
   const deleteAccount = usePermanentDeleteAccount();
@@ -39,9 +37,9 @@ export default function AccountsClient({
 
   // Form states
   const [formData, setFormData] = useState({
-    name: '',
-    type: 'other' as AccountType,
-    currency: (defaultCurrency || 'USD') as CurrencyCode,
+    name: "",
+    type: "other" as AccountType,
+    currency: (defaultCurrency || "USD") as CurrencyCode,
     balance: 0,
     exclude_from_free: false,
   });
@@ -52,16 +50,16 @@ export default function AccountsClient({
     try {
       await createAccount.mutateAsync(formData);
       setFormData({
-        name: '',
-        type: 'other',
-        currency: 'USD',
+        name: "",
+        type: "other",
+        currency: "USD",
         balance: 0,
         exclude_from_free: false,
       });
       setIsCreating(false);
     } catch (error) {
-      console.error('Error creating account:', error);
-      alert('Failed to create account');
+      console.error("Error creating account:", error);
+      alert("Failed to create account");
     }
   };
 
@@ -73,8 +71,8 @@ export default function AccountsClient({
       await updateAccount.mutateAsync({ id, updates });
       setEditingId(null);
     } catch (error) {
-      console.error('Error updating account:', error);
-      alert('Failed to update account');
+      console.error("Error updating account:", error);
+      alert("Failed to update account");
     }
   };
 
@@ -85,8 +83,8 @@ export default function AccountsClient({
       await deleteAccount.mutateAsync(deleteConfirm.id);
       setDeleteConfirm(null);
     } catch (error) {
-      console.error('Error deleting account:', error);
-      alert('Failed to delete account');
+      console.error("Error deleting account:", error);
+      alert("Failed to delete account");
     }
   };
 
@@ -99,6 +97,11 @@ export default function AccountsClient({
     updateAccount.isPending ||
     deleteAccount.isPending,
   );
+
+  // Show loading skeleton while fetching and decrypting accounts
+  if (isLoading) {
+    return <AccountsSkeleton />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-background/95 pt-12 md:pt-0 pb-24 md:pb-0">
@@ -180,7 +183,7 @@ export default function AccountsClient({
                 <input
                   type="number"
                   step="0.01"
-                  value={formData.balance || ''}
+                  value={formData.balance || ""}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
@@ -222,7 +225,7 @@ export default function AccountsClient({
                 className="flex-1 smooth-transition rounded-lg sm:rounded-xl bg-gradient-to-r from-accent to-accent/80 px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm text-white hover:shadow-lg active:scale-95 disabled:opacity-50 touch-target"
                 disabled={createAccount.isPending}
               >
-                {createAccount.isPending ? 'Creating...' : 'Create'}
+                {createAccount.isPending ? "Creating..." : "Create"}
               </button>
               <button
                 type="button"
@@ -237,7 +240,7 @@ export default function AccountsClient({
           <>
             {/* Accounts List */}
             <div className="space-y-3">
-              {accounts.length === 0 ? (
+              {!accounts || accounts.length === 0 ? (
                 <div className="card-glass text-center py-16">
                   <p className="text-lg text-muted-foreground">
                     No accounts. Create your first account.
@@ -262,11 +265,11 @@ export default function AccountsClient({
                           )}
                         </div>
                         <p className="mt-0.5 sm:mt-1 text-xs capitalize text-muted-foreground">
-                          {account.type === 'bank'
-                            ? 'Bank'
-                            : account.type === 'crypto'
-                              ? 'Crypto'
-                              : 'Other'}{' '}
+                          {account.type === "bank"
+                            ? "Bank"
+                            : account.type === "crypto"
+                              ? "Crypto"
+                              : "Other"}{" "}
                           • {account.currency}
                         </p>
                         <div className="mt-1.5 sm:mt-2">
@@ -303,7 +306,7 @@ export default function AccountsClient({
                         onClick={() =>
                           setDeleteConfirm({
                             id: account.id,
-                            name: account.name || 'Unnamed Account',
+                            name: account.name || "Unnamed Account",
                           })
                         }
                         disabled={loading}

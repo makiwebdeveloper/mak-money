@@ -1,8 +1,8 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 /**
@@ -11,8 +11,14 @@ export function cn(...inputs: ClassValue[]) {
  * @param decimals - Number of decimal places (default: 2)
  * @returns Formatted string like "33,333.33"
  */
-export function formatNumber(value: number, decimals: number = 2): string {
-  return value.toLocaleString('en-US', {
+export function formatNumber(
+  value: number | null | undefined,
+  decimals: number = 2,
+): string {
+  if (value === null || value === undefined || isNaN(value)) {
+    return "0.00";
+  }
+  return value.toLocaleString("en-US", {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });

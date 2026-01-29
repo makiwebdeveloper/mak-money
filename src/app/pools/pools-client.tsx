@@ -12,6 +12,7 @@ import {
   useCreatePool,
   usePermanentDeletePool,
   useFreeBalance,
+  useExcludedAccountsBalance,
 } from "@/lib/hooks/usePools";
 import { useAllocations } from "@/lib/hooks/useAllocations";
 
@@ -26,22 +27,19 @@ interface PoolBalance {
 }
 
 interface PoolsClientProps {
-  pools: Pool[];
-  poolBalances: PoolBalance[];
   currency: string;
   userId: string;
 }
 
-export default function PoolsClient({
-  pools: initialPools,
-  poolBalances: initialPoolBalances,
-  currency,
-}: PoolsClientProps) {
-  // Use react-query hooks
-  const { data: poolsData = initialPools } = usePools();
-  const { data: allocations = [] } = useAllocations();
-  const pools: Pool[] = poolsData as Pool[];
+export default function PoolsClient({ currency }: PoolsClientProps) {
+  // Use react-query hooks - fetch and decrypt on client only
+  const { data: poolsData, isLoading: poolsLoading } = usePools();
+  const { data: allocations = [], isLoading: allocationsLoading } =
+    useAllocations();
+  const pools: Pool[] = (poolsData as Pool[]) || [];
   const { data: freeBalance = 0 } = useFreeBalance();
+  const { data: excludedBalance = 0, hasExcludedAccounts = false } =
+    useExcludedAccountsBalance();
 
   console.log("All allocations:", allocations);
   console.log("All pools:", pools);
@@ -59,6 +57,11 @@ export default function PoolsClient({
     name: string;
     amount: number;
   } | null>(null);
+
+  // Show loading state while fetching and decrypting data
+  if (poolsLoading || allocationsLoading) {
+    return <PoolsSkeleton />;
+  }
 
   const currencySymbol =
     CURRENCIES.find((c) => c.code === currency)?.symbol || "$";
@@ -155,11 +158,56 @@ export default function PoolsClient({
         </div>
 
         {/* Pools List */}
-        {isLoading && displayedPools.length === 0 ? (
+        {isLoading && displayedPools.length === 0 && !hasExcludedAccounts ? (
           <PoolsSkeleton />
         ) : (
           <div className="space-y-3">
-            {displayedPools.length === 0 ? (
+            {/* Virtual Excluded Accounts Pool */}
+            {hasExcludedAccounts && (
+              <div className="card-glass p-4 sm:p-5 border-2 border-orange-200 dark:border-orange-800/50">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div
+                      className="h-12 sm:h-14 w-12 sm:w-14 rounded-full shadow-lg flex-shrink-0 flex items-center justify-center"
+                      style={{ backgroundColor: "#fb923c" }}
+                    >
+                      <svg
+                        className="h-6 sm:h-7 w-6 sm:w-7 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                        />
+                      </svg>
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-base sm:text-lg font-bold text-foreground truncate">
+                        Reserved Accounts
+                      </h3>
+                      <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-muted-foreground">
+                        Excluded from free funds
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between sm:justify-start gap-2 flex-shrink-0">
+                    <div className="text-right sm:text-left">
+                      <p className="text-lg sm:text-2xl font-bold text-orange-600 dark:text-orange-400">
+                        {currencySymbol}
+                        {formatNumber(excludedBalance)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {displayedPools.length === 0 && !hasExcludedAccounts ? (
               <div className="card-glass text-center py-12 sm:py-16">
                 <p className="text-sm sm:text-base text-muted-foreground">
                   No pools. Create your first pool.
