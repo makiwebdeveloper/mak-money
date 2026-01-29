@@ -5,6 +5,7 @@ import { Database, DecryptedAccount } from '@/lib/types/database';
 import { CURRENCIES, CurrencyCode } from '@/lib/constants/currencies';
 import { AccountsSkeleton } from '@/components/accounts-skeleton';
 import ConfirmDeleteModal from '@/components/confirm-delete-modal';
+import { CurrencyDisplay } from '@/components/ui/currency-display';
 import {
   useAccounts,
   useCreateAccount,
@@ -269,13 +270,11 @@ export default function AccountsClient({
                           • {account.currency}
                         </p>
                         <div className="mt-1.5 sm:mt-2">
-                          <p className="text-xl sm:text-2xl font-bold text-accent">
-                            {getCurrencySymbol(account.currency)}{' '}
-                            {(account.balance ?? 0).toLocaleString('en-US', {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}
-                          </p>
+                          <CurrencyDisplay
+                            amount={account.balance ?? 0}
+                            currency={account.currency as CurrencyCode}
+                            className="text-xl sm:text-2xl font-bold text-accent"
+                          />
                         </div>
                         {/* Toggle exclude_from_free */}
                         <div className="mt-2 sm:mt-3 flex items-center gap-2">

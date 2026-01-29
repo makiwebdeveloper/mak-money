@@ -19,12 +19,12 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const { name, color, icon } = body;
+    const { encrypted_data, color, icon } = body;
 
     // Build update object only with provided fields
-    const updates: Record<string, string> = {};
-    if (name !== undefined && name.trim()) {
-      updates.name = name.trim();
+    const updates: Record<string, any> = {};
+    if (encrypted_data !== undefined) {
+      updates.encrypted_data = encrypted_data;
     }
     if (color !== undefined) {
       updates.color = color;

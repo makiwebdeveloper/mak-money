@@ -6,6 +6,8 @@ import { formatNumber } from "@/lib/utils";
 import { useAccounts } from "@/lib/hooks/useAccounts";
 import { useCreateTransaction } from "@/lib/hooks/useTransactions";
 import { useFreeBalance } from "@/lib/hooks/usePools";
+import { CurrencyDisplay } from "@/components/ui/currency-display";
+import { CurrencyCode, CURRENCIES } from "@/lib/constants/currencies";
 import {
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
@@ -203,11 +205,17 @@ export default function QuickTransactionModal({
               required
             >
               <option value="">Select account</option>
-              {accounts.map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.name} ({account.balance} {account.currency})
-                </option>
-              ))}
+              {accounts.map((account) => {
+                const getCurrencySymbol = (code: string) => {
+                  return CURRENCIES.find((c) => c.code === code)?.symbol || code;
+                };
+                
+                return (
+                  <option key={account.id} value={account.id}>
+                    {account.name} ({getCurrencySymbol(account.currency)} {formatNumber(account.balance || 0)})
+                  </option>
+                );
+              })}
             </select>
           </div>
 

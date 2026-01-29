@@ -155,7 +155,6 @@ export function useCreateTransaction() {
       queryClient.invalidateQueries({ queryKey: transactionKeys.list() });
       queryClient.invalidateQueries({ queryKey: accountKeys.list() });
       queryClient.invalidateQueries({ queryKey: poolKeys.list() });
-      queryClient.invalidateQueries({ queryKey: poolKeys.freeBalance() });
     },
   });
 }
@@ -202,7 +201,6 @@ export function useDeleteTransaction() {
       queryClient.invalidateQueries({ queryKey: transactionKeys.list() });
       queryClient.invalidateQueries({ queryKey: accountKeys.list() });
       queryClient.invalidateQueries({ queryKey: poolKeys.list() });
-      queryClient.invalidateQueries({ queryKey: poolKeys.freeBalance() });
     },
   });
 }

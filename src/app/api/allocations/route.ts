@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { convertCurrency } from "@/lib/constants/exchange-rates";
-import { CurrencyCode } from "@/lib/constants/currencies";
 
 // GET /api/allocations - Get all allocations for current user
 export async function GET(req: NextRequest) {
@@ -17,15 +15,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get user's default currency
-    const { data: userData } = await supabase
-      .from("users")
-      .select("default_currency")
-      .eq("id", user.id)
-      .single();
-
-    const defaultCurrency = (userData?.default_currency ||
-      "USD") as CurrencyCode;
 
     // Get query params for filtering
     const searchParams = req.nextUrl.searchParams;
@@ -34,7 +23,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabase
       .from("allocations")
-      .select("*, accounts(name, currency), money_pools(name, color, icon)")
+      .select("*, accounts(id, currency), money_pools(id, color, icon)")
       .eq("user_id", user.id);
 
     if (account_id) {
@@ -50,28 +39,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Add converted amounts to allocations
-    const allocationsWithConversion = await Promise.all(
-      (allocations || []).map(async (allocation) => {
-        const accountCurrency =
-          (allocation.accounts as any)?.currency || defaultCurrency;
-        const convertedAmount = await convertCurrency(
-          allocation.amount,
-          accountCurrency as CurrencyCode,
-          defaultCurrency,
-        );
-
-        return {
-          ...allocation,
-          convertedAmount,
-          defaultCurrency,
-        };
-      }),
-    );
-
+    // Return encrypted allocations - client will decrypt and calculate
     return NextResponse.json({
-      allocations: allocationsWithConversion,
-      defaultCurrency,
+      allocations: allocations || [],
     });
   } catch (error) {
     console.error("Error fetching allocations:", error);
@@ -97,27 +67,20 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { account_id, pool_id, amount } = body;
+    const { account_id, pool_id, encrypted_data } = body;
 
     // Validate required fields
-    if (!account_id || !pool_id || amount === undefined) {
+    if (!account_id || !pool_id || !encrypted_data) {
       return NextResponse.json(
-        { error: "Missing required fields: account_id, pool_id, amount" },
+        { error: "Missing required fields: account_id, pool_id, encrypted_data" },
         { status: 400 },
       );
     }
 
-    if (amount < 0) {
-      return NextResponse.json(
-        { error: "Amount cannot be negative" },
-        { status: 400 },
-      );
-    }
-
-    // Check if account belongs to user
+    // Check if account belongs to user (no balance check - data is encrypted)
     const { data: account, error: accountError } = await supabase
       .from("accounts")
-      .select("id, balance")
+      .select("id")
       .eq("id", account_id)
       .eq("user_id", user.id)
       .single();
@@ -146,7 +109,7 @@ export async function POST(req: NextRequest) {
           user_id: user.id,
           account_id,
           pool_id,
-          amount,
+          encrypted_data,
         },
         {
           onConflict: "user_id,account_id,pool_id",
@@ -156,13 +119,6 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      // Check if it's a validation error from trigger
-      if (error.message.includes("exceed account balance")) {
-        return NextResponse.json(
-          { error: "Total allocations cannot exceed account balance" },
-          { status: 400 },
-        );
-      }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 

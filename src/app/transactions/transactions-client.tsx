@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Database } from '@/lib/types/database';
 import { formatNumber } from '@/lib/utils';
 import { TransactionsSkeleton } from '@/components/transactions-skeleton';
+import { CurrencyDisplay } from '@/components/ui/currency-display';
+import { CurrencyCode } from '@/lib/constants/currencies';
 import {
   useTransactions,
   useCreateTransaction,
@@ -394,9 +396,12 @@ export default function TransactionsClient({
                       <td
                         className={`whitespace-nowrap px-6 py-4 text-sm font-bold ${getTransactionColor(transaction.type)}`}
                       >
-                        {getTransactionSign(transaction.type)}
-                        {formatNumber(transaction.amount ?? 0)}{' '}
-                        {transaction.currency}
+                        <span className="mr-1">{getTransactionSign(transaction.type)}</span>
+                        <CurrencyDisplay
+                          amount={transaction.amount ?? 0}
+                          currency={transaction.currency as CurrencyCode}
+                          showConverted={true}
+                        />
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
                         {transaction.category || '-'}

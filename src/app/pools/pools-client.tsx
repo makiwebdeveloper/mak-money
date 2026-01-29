@@ -1,20 +1,21 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Database } from '@/lib/types/database';
-import { CURRENCIES } from '@/lib/constants/currencies';
-import { formatNumber } from '@/lib/utils';
-import AllocationManager from '@/components/allocation-manager';
-import { PoolsSkeleton } from '@/components/pools-skeleton';
-import ConfirmDeleteModal from '@/components/confirm-delete-modal';
+import { useState } from "react";
+import { Database } from "@/lib/types/database";
+import { CURRENCIES } from "@/lib/constants/currencies";
+import { formatNumber } from "@/lib/utils";
+import AllocationManager from "@/components/allocation-manager";
+import { PoolsSkeleton } from "@/components/pools-skeleton";
+import ConfirmDeleteModal from "@/components/confirm-delete-modal";
 import {
   usePools,
   useCreatePool,
   usePermanentDeletePool,
   useFreeBalance,
-} from '@/lib/hooks/usePools';
+} from "@/lib/hooks/usePools";
+import { useAllocations } from "@/lib/hooks/useAllocations";
 
-type Pool = Database['public']['Tables']['money_pools']['Row'] & {
+type Pool = Database["public"]["Tables"]["money_pools"]["Row"] & {
   balance?: number;
   currency?: string;
 };
@@ -38,13 +39,17 @@ export default function PoolsClient({
 }: PoolsClientProps) {
   // Use react-query hooks
   const { data: poolsData = initialPools } = usePools();
+  const { data: allocations = [] } = useAllocations();
   const pools: Pool[] = poolsData as Pool[];
   const { data: freeBalance = 0 } = useFreeBalance();
+
+  console.log("All allocations:", allocations);
+  console.log("All pools:", pools);
   const createPool = useCreatePool();
   const deletePool = usePermanentDeletePool();
 
   const [isCreating, setIsCreating] = useState(false);
-  const [newPoolName, setNewPoolName] = useState('');
+  const [newPoolName, setNewPoolName] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<{
     id: string;
     name: string;
@@ -56,11 +61,11 @@ export default function PoolsClient({
   } | null>(null);
 
   const currencySymbol =
-    CURRENCIES.find((c) => c.code === currency)?.symbol || '$';
+    CURRENCIES.find((c) => c.code === currency)?.symbol || "$";
 
   // Only show active pools (excluding Free pool since it's shown separately above)
   const displayedPools = pools.filter(
-    (pool) => pool.is_active && pool.type !== 'free',
+    (pool) => pool.is_active && pool.type !== "free",
   );
 
   const handleCreatePool = async (e: React.FormEvent) => {
@@ -70,13 +75,13 @@ export default function PoolsClient({
     try {
       await createPool.mutateAsync({
         name: newPoolName,
-        type: 'custom',
+        type: "custom",
       });
-      setNewPoolName('');
+      setNewPoolName("");
       setIsCreating(false);
     } catch (error) {
-      console.error('Error creating pool:', error);
-      alert('Failed to create pool');
+      console.error("Error creating pool:", error);
+      alert("Failed to create pool");
     }
   };
 
@@ -87,20 +92,28 @@ export default function PoolsClient({
       await deletePool.mutateAsync(deleteConfirm.id);
       setDeleteConfirm(null);
     } catch (error) {
-      console.error('Error deleting pool:', error);
-      alert('Failed to delete pool');
+      console.error("Error deleting pool:", error);
+      alert("Failed to delete pool");
     }
   };
 
-  // Get balance from pool data
+  // Calculate pool balance from allocations
   const getPoolBalance = (poolId: string) => {
-    const pool = pools.find((p) => p.id === poolId);
-    return pool?.balance || 0;
+    const poolAllocations = allocations.filter(
+      (allocation) => allocation.pool_id === poolId,
+    );
+    console.log("Pool allocations for", poolId, ":", poolAllocations);
+    const balance = poolAllocations.reduce((sum, allocation) => {
+      console.log("Adding allocation amount:", allocation.amount);
+      return sum + (allocation.amount || 0);
+    }, 0);
+    console.log("Total pool balance:", balance);
+    return balance;
   };
 
   // Total in Pools = sum of all active pools EXCEPT Free pool (only allocated money)
   const totalBalance = pools
-    .filter((p) => p.is_active && p.type !== 'free')
+    .filter((p) => p.is_active && p.type !== "free")
     .reduce((sum, pool) => sum + getPoolBalance(pool.id), 0);
 
   const isLoading = Boolean(createPool.isPending || deletePool.isPending);
@@ -166,10 +179,10 @@ export default function PoolsClient({
                           {pool.name}
                         </h3>
                         <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm capitalize text-muted-foreground">
-                          {pool.type === 'free'
-                            ? 'Free'
-                            : pool.type === 'custom'
-                              ? 'Custom'
+                          {pool.type === "free"
+                            ? "Free"
+                            : pool.type === "custom"
+                              ? "Custom"
                               : pool.type}
                         </p>
                       </div>
@@ -186,33 +199,33 @@ export default function PoolsClient({
                       {/* Pool actions */}
                       <div className="flex gap-2 sm:gap-3">
                         {/* Allocation management button - only for non-free pools */}
-                        {pool.type !== 'free' && (
+                        {pool.type !== "free" && (
                           <button
                             onClick={() =>
                               setEditingPool({
                                 id: pool.id,
-                                name: pool.name || 'Unnamed Pool',
+                                name: pool.name || "Unnamed Pool",
                                 amount: getPoolBalance(pool.id),
                               })
                             }
-                            disabled={isLoading || pool.id.startsWith('temp-')}
+                            disabled={isLoading || pool.id.startsWith("temp-")}
                             className="smooth-transition rounded-xl px-3 sm:px-6 py-2.5 sm:py-3 font-semibold text-xs sm:text-sm bg-gradient-to-r from-accent to-accent/80 text-white hover:shadow-lg active:scale-95 touch-target disabled:opacity-50 disabled:cursor-not-allowed"
                             title={
-                              pool.id.startsWith('temp-')
-                                ? 'Pool is being created...'
-                                : 'Allocate funds'
+                              pool.id.startsWith("temp-")
+                                ? "Pool is being created..."
+                                : "Allocate funds"
                             }
                           >
                             Allocate
                           </button>
                         )}
                         {/* Delete button - only for non-free pools */}
-                        {pool.type !== 'free' && (
+                        {pool.type !== "free" && (
                           <button
                             onClick={() =>
                               setDeleteConfirm({
                                 id: pool.id,
-                                name: pool.name || 'Unnamed Pool',
+                                name: pool.name || "Unnamed Pool",
                               })
                             }
                             disabled={isLoading}
@@ -272,13 +285,13 @@ export default function PoolsClient({
                   disabled={isLoading || !newPoolName.trim()}
                   className="flex-1 smooth-transition rounded-xl bg-gradient-to-r from-accent to-accent/80 px-4 py-2.5 sm:py-3 font-semibold text-sm sm:text-base text-white hover:shadow-lg active:scale-95 disabled:opacity-50 touch-target"
                 >
-                  {isLoading ? 'Creating...' : 'Create'}
+                  {isLoading ? "Creating..." : "Create"}
                 </button>
                 <button
                   type="button"
                   onClick={() => {
                     setIsCreating(false);
-                    setNewPoolName('');
+                    setNewPoolName("");
                   }}
                   disabled={isLoading}
                   className="flex-1 smooth-transition rounded-xl glass hover:shadow-md text-foreground font-semibold text-sm sm:text-base touch-target"
