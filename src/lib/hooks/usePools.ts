@@ -1,80 +1,164 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Database } from "@/lib/types/database";
-
-type Pool = Database["public"]["Tables"]["money_pools"]["Row"] & {
-  balance?: number;
-  currency?: string;
-};
-
-interface PoolBalance {
-  pool_id: string;
-  total_amount: number;
-}
+import { Database, DecryptedPool } from "@/lib/types/database";
+import { useAccounts } from "./useAccounts";
+import { useAllocations } from "./useAllocations";
+import { usePoolEncryption, useAllocationEncryption } from "./useEncryption";
+import { useUserCurrency } from "./useUser";
+import { convertCurrency } from "@/lib/constants/exchange-rates";
+import { CurrencyCode } from "@/lib/constants/currencies";
+import { useState, useEffect } from "react";
 
 // Query keys
 export const poolKeys = {
   all: ["pools"] as const,
   lists: () => [...poolKeys.all, "list"] as const,
   list: (filters?: any) => [...poolKeys.lists(), filters] as const,
-  balances: () => [...poolKeys.all, "balances"] as const,
-  freeBalance: () => [...poolKeys.all, "freeBalance"] as const,
 };
 
-// Fetch pools
+// Fetch and decrypt pools
 export function usePools() {
+  const { decryptPoolRow } = usePoolEncryption();
+
   return useQuery({
     queryKey: poolKeys.list(),
-    queryFn: async (): Promise<Pool[]> => {
+    queryFn: async (): Promise<DecryptedPool[]> => {
       const response = await fetch("/api/pools");
       if (!response.ok) {
         throw new Error("Failed to fetch pools");
       }
       const data = await response.json();
-      return data.pools || [];
+
+      // Decrypt all pools on client side
+      const decrypted = await Promise.all(
+        (data.pools || []).map(async (pool: any) => {
+          try {
+            // For system pools (like Free) with empty encrypted_data, use defaults
+            if (
+              !pool.encrypted_data ||
+              Object.keys(pool.encrypted_data).length === 0
+            ) {
+              return {
+                ...pool,
+                name: pool.type === "free" ? "Free" : "Unknown Pool",
+              } as DecryptedPool;
+            }
+            return await decryptPoolRow(pool);
+          } catch (error) {
+            console.error("Failed to decrypt pool:", pool.id, error);
+            return {
+              ...pool,
+              name: "Encrypted Pool",
+            } as DecryptedPool;
+          }
+        }),
+      );
+
+      return decrypted.filter((pool): pool is DecryptedPool => pool !== null);
     },
   });
 }
 
-// Fetch pool balances
-export function usePoolBalances() {
-  return useQuery({
-    queryKey: poolKeys.balances(),
-    queryFn: async (): Promise<PoolBalance[]> => {
-      const response = await fetch("/api/pools/balance");
-      if (!response.ok) {
-        throw new Error("Failed to fetch pool balances");
-      }
-      const data = await response.json();
-      return data.poolBalances || [];
-    },
-  });
-}
-
-// Fetch free balance
+// Calculate free balance from decrypted accounts (client-side only)
+// Free balance = Total balance of non-excluded accounts - Sum of all allocations (excluding free pool)
 export function useFreeBalance() {
-  return useQuery({
-    queryKey: poolKeys.freeBalance(),
-    queryFn: async (): Promise<number> => {
-      const response = await fetch("/api/pools/balance");
-      if (!response.ok) {
-        throw new Error("Failed to fetch free balance");
+  const { data: accounts, isLoading: accountsLoading } = useAccounts();
+  const { data: allocations, isLoading: allocationsLoading } = useAllocations();
+  const { data: pools, isLoading: poolsLoading } = usePools();
+  const { data: defaultCurrency, isLoading: currencyLoading } =
+    useUserCurrency();
+
+  const [freeBalance, setFreeBalance] = useState(0);
+  const [isConverting, setIsConverting] = useState(false);
+
+  useEffect(() => {
+    const calculateFreeBalance = async () => {
+      if (!accounts || !allocations || !pools || !defaultCurrency) return;
+
+      setIsConverting(true);
+      try {
+        // Find the free pool ID
+        const freePoolId = pools.find((p) => p.type === "free")?.id;
+
+        // Calculate total balance from active accounts (excluding those marked as exclude_from_free)
+        let totalAccountBalance = 0;
+        for (const account of accounts) {
+          if (
+            account.is_active &&
+            !account.exclude_from_free &&
+            account.balance
+          ) {
+            const converted = await convertCurrency(
+              account.balance,
+              account.currency as CurrencyCode,
+              defaultCurrency,
+            );
+            totalAccountBalance += converted;
+          }
+        }
+
+        // Calculate total allocated (excluding allocations to free pool)
+        let totalAllocated = 0;
+        for (const allocation of allocations) {
+          if (allocation.pool_id !== freePoolId && allocation.amount) {
+            // Find the account to get its currency
+            const account = accounts.find(
+              (acc) => acc.id === allocation.account_id,
+            );
+            const accountCurrency = account?.currency || defaultCurrency;
+
+            const converted = await convertCurrency(
+              allocation.amount,
+              accountCurrency as CurrencyCode,
+              defaultCurrency,
+            );
+            totalAllocated += converted;
+          }
+        }
+
+        // Free balance = Total balance - Total allocated
+        const balance = Number(
+          (totalAccountBalance - totalAllocated).toFixed(2),
+        );
+        setFreeBalance(balance);
+      } catch (error) {
+        console.error("Failed to calculate free balance:", error);
+        setFreeBalance(0);
+      } finally {
+        setIsConverting(false);
       }
-      const data = await response.json();
-      return data.freeBalance || 0;
-    },
-  });
+    };
+
+    calculateFreeBalance();
+  }, [accounts, allocations, pools, defaultCurrency]);
+
+  return {
+    data: freeBalance,
+    isLoading:
+      accountsLoading ||
+      allocationsLoading ||
+      poolsLoading ||
+      currencyLoading ||
+      isConverting,
+  };
 }
 
 // Create pool
 export function useCreatePool() {
   const queryClient = useQueryClient();
+  const { encryptPool } = usePoolEncryption();
 
   return useMutation({
     mutationFn: async (data: { name: string; type: string }) => {
+      // Encrypt the pool name
+      const encrypted_data = await encryptPool(data.name);
+
       const response = await fetch("/api/pools", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          type: data.type,
+          encrypted_data,
+        }),
       });
 
       if (!response.ok) {
@@ -86,11 +170,13 @@ export function useCreatePool() {
     onMutate: async (newPool) => {
       await queryClient.cancelQueries({ queryKey: poolKeys.list() });
 
-      const previousPools = queryClient.getQueryData<Pool[]>(poolKeys.list());
+      const previousPools = queryClient.getQueryData<DecryptedPool[]>(
+        poolKeys.list(),
+      );
 
-      queryClient.setQueryData<Pool[]>(poolKeys.list(), (old) => {
+      queryClient.setQueryData<DecryptedPool[]>(poolKeys.list(), (old) => {
         if (!old) return old;
-        const optimisticPool: Pool = {
+        const optimisticPool: DecryptedPool = {
           id: `temp-${Date.now()}`,
           user_id: "",
           name: newPool.name,
@@ -121,13 +207,17 @@ export function useCreatePool() {
 // Update pool
 export function useUpdatePool() {
   const queryClient = useQueryClient();
+  const { encryptPool } = usePoolEncryption();
 
   return useMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      // Encrypt the pool name
+      const encrypted_data = await encryptPool(name);
+
       const response = await fetch(`/api/pools/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ encrypted_data }),
       });
 
       if (!response.ok) {
@@ -139,9 +229,11 @@ export function useUpdatePool() {
     onMutate: async ({ id, name }) => {
       await queryClient.cancelQueries({ queryKey: poolKeys.list() });
 
-      const previousPools = queryClient.getQueryData<Pool[]>(poolKeys.list());
+      const previousPools = queryClient.getQueryData<DecryptedPool[]>(
+        poolKeys.list(),
+      );
 
-      queryClient.setQueryData<Pool[]>(poolKeys.list(), (old) => {
+      queryClient.setQueryData<DecryptedPool[]>(poolKeys.list(), (old) => {
         if (!old) return old;
         return old.map((pool) => (pool.id === id ? { ...pool, name } : pool));
       });
@@ -178,9 +270,11 @@ export function usePermanentDeletePool() {
     onMutate: async (poolId) => {
       await queryClient.cancelQueries({ queryKey: poolKeys.list() });
 
-      const previousPools = queryClient.getQueryData<Pool[]>(poolKeys.list());
+      const previousPools = queryClient.getQueryData<DecryptedPool[]>(
+        poolKeys.list(),
+      );
 
-      queryClient.setQueryData<Pool[]>(poolKeys.list(), (old) => {
+      queryClient.setQueryData<DecryptedPool[]>(poolKeys.list(), (old) => {
         if (!old) return old;
         return old.filter((pool) => pool.id !== poolId);
       });
@@ -194,8 +288,6 @@ export function usePermanentDeletePool() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: poolKeys.list() });
-      queryClient.invalidateQueries({ queryKey: poolKeys.freeBalance() });
-      queryClient.invalidateQueries({ queryKey: poolKeys.balances() });
     },
   });
 }
@@ -203,6 +295,7 @@ export function usePermanentDeletePool() {
 // Transfer allocation
 export function useTransferAllocation() {
   const queryClient = useQueryClient();
+  const { encryptAllocation } = useAllocationEncryption();
 
   return useMutation({
     mutationFn: async (data: {
@@ -210,10 +303,17 @@ export function useTransferAllocation() {
       pool_id: string;
       new_amount: number;
     }) => {
+      // Encrypt the allocation amount
+      const encrypted_data = await encryptAllocation(data.new_amount);
+
       const response = await fetch("/api/allocations/transfer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          account_id: data.account_id,
+          pool_id: data.pool_id,
+          encrypted_data,
+        }),
       });
 
       if (!response.ok) {
@@ -228,21 +328,12 @@ export function useTransferAllocation() {
       await queryClient.cancelQueries({ queryKey: poolKeys.list() });
 
       // Snapshot previous state
-      const previousPools = queryClient.getQueryData<Pool[]>(poolKeys.list());
+      const previousPools = queryClient.getQueryData<DecryptedPool[]>(
+        poolKeys.list(),
+      );
 
-      // Optimistically update pool balance
-      queryClient.setQueryData<Pool[]>(poolKeys.list(), (old) => {
-        if (!old) return old;
-        return old.map((pool) => {
-          if (pool.id === data.pool_id && pool.balance !== undefined) {
-            return {
-              ...pool,
-              balance: data.new_amount,
-            };
-          }
-          return pool;
-        });
-      });
+      // Optimistically update (pools don't have balance property anymore - remove this)
+      // Balance calculation is now done client-side in useFreeBalance
 
       return { previousPools };
     },
@@ -253,10 +344,10 @@ export function useTransferAllocation() {
       }
     },
     onSuccess: () => {
-      // Invalidate pools (which now include balances) and accounts
+      // Invalidate to get fresh encrypted data
       queryClient.invalidateQueries({ queryKey: poolKeys.list() });
-      queryClient.invalidateQueries({ queryKey: poolKeys.freeBalance() });
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["allocations"] });
     },
   });
 }

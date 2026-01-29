@@ -30,6 +30,7 @@ export async function GET() {
       .from("accounts")
       .select("*")
       .eq("user_id", user.id)
+      .eq("is_active", true)
       .order("created_at", { ascending: true });
 
     if (error) {
@@ -37,25 +38,10 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Add converted balance to each account
-    const accountsWithConversion = await Promise.all(
-      (accounts || []).map(async (account) => {
-        const convertedBalance = await convertCurrency(
-          account.balance,
-          account.currency as CurrencyCode,
-          defaultCurrency,
-        );
-
-        return {
-          ...account,
-          convertedBalance,
-          defaultCurrency,
-        };
-      }),
-    );
-
+    // Server does NOT decrypt data - just passes encrypted_data to client
+    // Client will decrypt using useAccountEncryption hook
     return NextResponse.json({
-      accounts: accountsWithConversion,
+      accounts: accounts || [],
       defaultCurrency,
     });
   } catch (error) {
@@ -81,11 +67,23 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, type, currency, balance, exclude_from_free } = body;
+    const { encrypted_data, type, currency, exclude_from_free } = body;
 
-    if (!name || !name.trim()) {
+    // Validate encrypted_data
+    if (!encrypted_data) {
       return NextResponse.json(
-        { error: "Account name is required" },
+        { error: "Encrypted data is required" },
+        { status: 400 },
+      );
+    }
+
+    if (
+      !encrypted_data.ciphertext ||
+      !encrypted_data.iv ||
+      !encrypted_data.version
+    ) {
+      return NextResponse.json(
+        { error: "Invalid encrypted data format" },
         { status: 400 },
       );
     }
@@ -97,15 +95,16 @@ export async function POST(request: Request) {
       );
     }
 
+    // Insert with encrypted_data (server never sees actual name/balance)
     const { data: account, error } = await supabase
       .from("accounts")
       .insert({
         user_id: user.id,
-        name: name.trim(),
+        encrypted_data,
         type: type || "other",
         currency,
-        balance: balance || 0,
         exclude_from_free: exclude_from_free || false,
+        // name and balance are null - data is in encrypted_data
       })
       .select()
       .single();

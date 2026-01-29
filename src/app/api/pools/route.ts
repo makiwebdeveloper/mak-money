@@ -1,7 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-import { convertCurrency } from "@/lib/constants/exchange-rates";
-import { CurrencyCode } from "@/lib/constants/currencies";
 
 // Generate a random pleasant color for pools
 function generateRandomColor(): string {
@@ -26,7 +24,7 @@ function generateRandomColor(): string {
   return colors[Math.floor(Math.random() * colors.length)];
 }
 
-// GET /api/pools - Get all active pools for current user with balances
+// GET /api/pools - Get all pools (encrypted data only, no balance calculation)
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -39,16 +37,6 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get user's default currency
-    const { data: userData } = await supabase
-      .from("users")
-      .select("default_currency")
-      .eq("id", user.id)
-      .single();
-
-    const defaultCurrency = (userData?.default_currency ||
-      "USD") as CurrencyCode;
-
     const { data: pools, error } = await supabase
       .from("money_pools")
       .select("*")
@@ -60,89 +48,7 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Get allocations for each pool with account currency
-    const poolsWithBalances = await Promise.all(
-      (pools || []).map(async (pool) => {
-        if (pool.type === "free") {
-          // For free pool, calculate differently
-          // Get all accounts
-          const { data: accounts } = await supabase
-            .from("accounts")
-            .select("balance, currency")
-            .eq("user_id", user.id)
-            .eq("is_active", true);
-
-          // Get all allocations except free pool
-          const { data: allocations } = await supabase
-            .from("allocations")
-            .select("amount, accounts(currency)")
-            .eq("user_id", user.id)
-            .neq("pool_id", pool.id);
-
-          // Convert all to default currency
-          let totalAccountBalance = 0;
-          for (const account of accounts || []) {
-            const converted = await convertCurrency(
-              account.balance,
-              account.currency as CurrencyCode,
-              defaultCurrency,
-            );
-            totalAccountBalance += converted;
-          }
-
-          let totalAllocated = 0;
-          for (const allocation of allocations || []) {
-            const accountCurrency =
-              (allocation.accounts as any)?.currency || defaultCurrency;
-            const converted = await convertCurrency(
-              allocation.amount,
-              accountCurrency as CurrencyCode,
-              defaultCurrency,
-            );
-            totalAllocated += converted;
-          }
-
-          const balance = Number(
-            (totalAccountBalance - totalAllocated).toFixed(2),
-          );
-
-          return {
-            ...pool,
-            balance,
-            currency: defaultCurrency,
-          };
-        } else {
-          // For regular pools, sum allocations
-          const { data: allocations } = await supabase
-            .from("allocations")
-            .select("amount, accounts(currency)")
-            .eq("pool_id", pool.id);
-
-          let balance = 0;
-          for (const allocation of allocations || []) {
-            const accountCurrency =
-              (allocation.accounts as any)?.currency || defaultCurrency;
-            const converted = await convertCurrency(
-              allocation.amount,
-              accountCurrency as CurrencyCode,
-              defaultCurrency,
-            );
-            balance += converted;
-          }
-
-          return {
-            ...pool,
-            balance: Number(balance.toFixed(2)),
-            currency: defaultCurrency,
-          };
-        }
-      }),
-    );
-
-    return NextResponse.json({
-      pools: poolsWithBalances,
-      defaultCurrency,
-    });
+    return NextResponse.json({ pools: pools || [] });
   } catch (error) {
     console.error("Error in pools GET:", error);
     return NextResponse.json(
@@ -166,11 +72,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, type, color, icon } = body;
+    const { encrypted_data, type, color, icon } = body;
 
-    if (!name || !name.trim()) {
+    if (!encrypted_data) {
       return NextResponse.json(
-        { error: "Pool name is required" },
+        { error: "Encrypted data is required" },
         { status: 400 },
       );
     }
@@ -187,7 +93,7 @@ export async function POST(request: Request) {
       .from("money_pools")
       .insert({
         user_id: user.id,
-        name: name.trim(),
+        encrypted_data,
         type: type || "custom",
         color: color || generateRandomColor(),
         icon: icon || "wallet",

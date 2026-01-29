@@ -80,6 +80,7 @@ export function useCreateTransaction() {
           to_account_id: newTransaction.to_account_id || null,
           category: newTransaction.category || null,
           description: newTransaction.description || null,
+          encrypted_data: null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           transaction_date: new Date().toISOString(),
@@ -154,7 +155,6 @@ export function useCreateTransaction() {
       queryClient.invalidateQueries({ queryKey: transactionKeys.list() });
       queryClient.invalidateQueries({ queryKey: accountKeys.list() });
       queryClient.invalidateQueries({ queryKey: poolKeys.list() });
-      queryClient.invalidateQueries({ queryKey: poolKeys.freeBalance() });
     },
   });
 }
@@ -201,7 +201,6 @@ export function useDeleteTransaction() {
       queryClient.invalidateQueries({ queryKey: transactionKeys.list() });
       queryClient.invalidateQueries({ queryKey: accountKeys.list() });
       queryClient.invalidateQueries({ queryKey: poolKeys.list() });
-      queryClient.invalidateQueries({ queryKey: poolKeys.freeBalance() });
     },
   });
 }

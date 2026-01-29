@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Database } from "@/lib/types/database";
+import { Database, DecryptedAccount } from "@/lib/types/database";
 import { CurrencyCode } from "@/lib/constants/currencies";
+import { useAccountEncryption } from "./useEncryption";
+import { useUserCurrency } from "./useUser";
+import { convertCurrency } from "@/lib/constants/exchange-rates";
+import { useState, useEffect } from "react";
 
-type Account = Database["public"]["Tables"]["accounts"]["Row"] & {
-  convertedBalance?: number;
-  defaultCurrency?: string;
-};
 type AccountType = Database["public"]["Tables"]["accounts"]["Row"]["type"];
 
 // Query keys
@@ -15,45 +15,88 @@ export const accountKeys = {
   list: (filters?: any) => [...accountKeys.lists(), filters] as const,
   details: () => [...accountKeys.all, "detail"] as const,
   detail: (id: string) => [...accountKeys.details(), id] as const,
-  balance: () => [...accountKeys.all, "balance"] as const,
 };
 
-// Fetch accounts
+// Fetch and decrypt accounts
 export function useAccounts() {
+  const { decryptAccountRow } = useAccountEncryption();
+
   return useQuery({
     queryKey: accountKeys.list(),
-    queryFn: async (): Promise<Account[]> => {
+    queryFn: async (): Promise<DecryptedAccount[]> => {
+      // Fetch encrypted data from server
       const response = await fetch("/api/accounts");
       if (!response.ok) {
         throw new Error("Failed to fetch accounts");
       }
-      const data = await response.json();
-      return data.accounts || [];
+      const { accounts } = await response.json();
+
+      // Decrypt all accounts on client side
+      const decrypted = await Promise.all(
+        (accounts || []).map(async (account: any) => {
+          try {
+            return await decryptAccountRow(account);
+          } catch (error) {
+            console.error("Failed to decrypt account:", account.id, error);
+            return null;
+          }
+        }),
+      );
+
+      // Filter out failed decryptions
+      return decrypted.filter((acc): acc is DecryptedAccount => acc !== null);
     },
   });
 }
 
-// Fetch total balance
+// Fetch total balance (calculated on client after decryption with currency conversion)
 export function useTotalBalance() {
-  return useQuery({
-    queryKey: accountKeys.balance(),
-    queryFn: async (): Promise<{
-      totalBalance: number;
-      currency: string;
-      accountsCount: number;
-    }> => {
-      const response = await fetch("/api/accounts/balance");
-      if (!response.ok) {
-        throw new Error("Failed to fetch total balance");
+  const { data: accounts, isLoading: accountsLoading } = useAccounts();
+  const { data: defaultCurrency, isLoading: currencyLoading } = useUserCurrency();
+
+  const [totalBalance, setTotalBalance] = useState(0);
+  const [isConverting, setIsConverting] = useState(false);
+
+  useEffect(() => {
+    const convertBalances = async () => {
+      if (!accounts || !defaultCurrency) return;
+      
+      setIsConverting(true);
+      try {
+        let total = 0;
+        for (const account of accounts) {
+          if (account.balance) {
+            const converted = await convertCurrency(
+              account.balance,
+              account.currency as CurrencyCode,
+              defaultCurrency
+            );
+            total += converted;
+          }
+        }
+        setTotalBalance(Number(total.toFixed(2)));
+      } catch (error) {
+        console.error('Failed to convert currencies:', error);
+      } finally {
+        setIsConverting(false);
       }
-      return response.json();
-    },
-  });
+    };
+
+    convertBalances();
+  }, [accounts, defaultCurrency]);
+
+  const accountsCount = accounts?.length || 0;
+
+  return {
+    data: { totalBalance, currency: defaultCurrency || 'USD', accountsCount },
+    isLoading: accountsLoading || currencyLoading || isConverting,
+  };
 }
 
-// Create account
+// Create encrypted account
 export function useCreateAccount() {
   const queryClient = useQueryClient();
+  const { encryptAccount } = useAccountEncryption();
 
   return useMutation({
     mutationFn: async (formData: {
@@ -63,14 +106,27 @@ export function useCreateAccount() {
       balance: number;
       exclude_from_free?: boolean;
     }) => {
+      // Encrypt sensitive data on client
+      const encrypted_data = await encryptAccount(
+        formData.name,
+        formData.balance,
+      );
+
+      // Send encrypted data to server
       const response = await fetch("/api/accounts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          encrypted_data,
+          type: formData.type,
+          currency: formData.currency,
+          exclude_from_free: formData.exclude_from_free || false,
+        }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create account");
+        const error = await response.json();
+        throw new Error(error.error || "Failed to create account");
       }
 
       return response.json();
@@ -80,27 +136,30 @@ export function useCreateAccount() {
       await queryClient.cancelQueries({ queryKey: accountKeys.list() });
 
       // Snapshot previous value
-      const previousAccounts = queryClient.getQueryData<Account[]>(
+      const previousAccounts = queryClient.getQueryData<DecryptedAccount[]>(
         accountKeys.list(),
       );
 
-      // Optimistically update
-      queryClient.setQueryData<Account[]>(accountKeys.list(), (old) => {
-        if (!old) return old;
-        const optimisticAccount: Account = {
-          id: `temp-${Date.now()}`,
-          user_id: "",
-          name: newAccount.name,
-          type: newAccount.type,
-          currency: newAccount.currency,
-          balance: newAccount.balance,
-          is_active: true,
-          exclude_from_free: newAccount.exclude_from_free || false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        return [...old, optimisticAccount];
-      });
+      // Optimistically update with decrypted data
+      queryClient.setQueryData<DecryptedAccount[]>(
+        accountKeys.list(),
+        (old) => {
+          if (!old) return old;
+          const optimisticAccount: DecryptedAccount = {
+            id: `temp-${Date.now()}`,
+            user_id: "",
+            name: newAccount.name,
+            type: newAccount.type,
+            currency: newAccount.currency,
+            balance: newAccount.balance,
+            is_active: true,
+            exclude_from_free: newAccount.exclude_from_free || false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          return [...old, optimisticAccount];
+        },
+      );
 
       return { previousAccounts };
     },
@@ -115,10 +174,6 @@ export function useCreateAccount() {
       queryClient.invalidateQueries({ queryKey: accountKeys.list() });
       // Also invalidate pools since Free pool balance depends on accounts
       queryClient.invalidateQueries({ queryKey: ["pools"] });
-      // Invalidate free balance
-      queryClient.invalidateQueries({ queryKey: ["pools", "freeBalance"] });
-      // Invalidate total balance
-      queryClient.invalidateQueries({ queryKey: accountKeys.balance() });
     },
   });
 }
@@ -133,7 +188,7 @@ export function useUpdateAccount() {
       updates,
     }: {
       id: string;
-      updates: Partial<Account>;
+      updates: Partial<DecryptedAccount>;
     }) => {
       const response = await fetch(`/api/accounts/${id}`, {
         method: "PATCH",
@@ -150,16 +205,19 @@ export function useUpdateAccount() {
     onMutate: async ({ id, updates }) => {
       await queryClient.cancelQueries({ queryKey: accountKeys.list() });
 
-      const previousAccounts = queryClient.getQueryData<Account[]>(
+      const previousAccounts = queryClient.getQueryData<DecryptedAccount[]>(
         accountKeys.list(),
       );
 
-      queryClient.setQueryData<Account[]>(accountKeys.list(), (old) => {
-        if (!old) return old;
-        return old.map((account) =>
-          account.id === id ? { ...account, ...updates } : account,
-        );
-      });
+      queryClient.setQueryData<DecryptedAccount[]>(
+        accountKeys.list(),
+        (old) => {
+          if (!old) return old;
+          return old.map((account) =>
+            account.id === id ? { ...account, ...updates } : account,
+          );
+        },
+      );
 
       return { previousAccounts };
     },
@@ -172,10 +230,6 @@ export function useUpdateAccount() {
       queryClient.invalidateQueries({ queryKey: accountKeys.list() });
       // Invalidate pools since account balance affects Free pool
       queryClient.invalidateQueries({ queryKey: ["pools"] });
-      // Invalidate free balance to recalculate when exclude_from_free changes
-      queryClient.invalidateQueries({ queryKey: ["pools", "freeBalance"] });
-      // Invalidate total balance
-      queryClient.invalidateQueries({ queryKey: accountKeys.balance() });
     },
   });
 }
@@ -199,16 +253,19 @@ export function useArchiveAccount() {
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: accountKeys.list() });
 
-      const previousAccounts = queryClient.getQueryData<Account[]>(
+      const previousAccounts = queryClient.getQueryData<DecryptedAccount[]>(
         accountKeys.list(),
       );
 
-      queryClient.setQueryData<Account[]>(accountKeys.list(), (old) => {
-        if (!old) return old;
-        return old.map((account) =>
-          account.id === id ? { ...account, is_active: false } : account,
-        );
-      });
+      queryClient.setQueryData<DecryptedAccount[]>(
+        accountKeys.list(),
+        (old) => {
+          if (!old) return old;
+          return old.map((account) =>
+            account.id === id ? { ...account, is_active: false } : account,
+          );
+        },
+      );
 
       return { previousAccounts };
     },
@@ -221,10 +278,6 @@ export function useArchiveAccount() {
       queryClient.invalidateQueries({ queryKey: accountKeys.list() });
       // Invalidate pools since archiving account affects Free pool
       queryClient.invalidateQueries({ queryKey: ["pools"] });
-      // Invalidate free balance
-      queryClient.invalidateQueries({ queryKey: ["pools", "freeBalance"] });
-      // Invalidate total balance
-      queryClient.invalidateQueries({ queryKey: accountKeys.balance() });
     },
   });
 }
@@ -248,16 +301,19 @@ export function useRestoreAccount() {
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: accountKeys.list() });
 
-      const previousAccounts = queryClient.getQueryData<Account[]>(
+      const previousAccounts = queryClient.getQueryData<DecryptedAccount[]>(
         accountKeys.list(),
       );
 
-      queryClient.setQueryData<Account[]>(accountKeys.list(), (old) => {
-        if (!old) return old;
-        return old.map((account) =>
-          account.id === id ? { ...account, is_active: true } : account,
-        );
-      });
+      queryClient.setQueryData<DecryptedAccount[]>(
+        accountKeys.list(),
+        (old) => {
+          if (!old) return old;
+          return old.map((account) =>
+            account.id === id ? { ...account, is_active: true } : account,
+          );
+        },
+      );
 
       return { previousAccounts };
     },
@@ -270,10 +326,6 @@ export function useRestoreAccount() {
       queryClient.invalidateQueries({ queryKey: accountKeys.list() });
       // Invalidate pools since restoring account affects Free pool
       queryClient.invalidateQueries({ queryKey: ["pools"] });
-      // Invalidate free balance
-      queryClient.invalidateQueries({ queryKey: ["pools", "freeBalance"] });
-      // Invalidate total balance
-      queryClient.invalidateQueries({ queryKey: accountKeys.balance() });
     },
   });
 }
@@ -297,14 +349,17 @@ export function usePermanentDeleteAccount() {
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: accountKeys.list() });
 
-      const previousAccounts = queryClient.getQueryData<Account[]>(
+      const previousAccounts = queryClient.getQueryData<DecryptedAccount[]>(
         accountKeys.list(),
       );
 
-      queryClient.setQueryData<Account[]>(accountKeys.list(), (old) => {
-        if (!old) return old;
-        return old.filter((account) => account.id !== id);
-      });
+      queryClient.setQueryData<DecryptedAccount[]>(
+        accountKeys.list(),
+        (old) => {
+          if (!old) return old;
+          return old.filter((account) => account.id !== id);
+        },
+      );
 
       return { previousAccounts };
     },
@@ -317,10 +372,6 @@ export function usePermanentDeleteAccount() {
       queryClient.invalidateQueries({ queryKey: accountKeys.list() });
       // Invalidate pools since deleting account affects Free pool
       queryClient.invalidateQueries({ queryKey: ["pools"] });
-      // Invalidate free balance
-      queryClient.invalidateQueries({ queryKey: ["pools", "freeBalance"] });
-      // Invalidate total balance
-      queryClient.invalidateQueries({ queryKey: accountKeys.balance() });
     },
   });
 }

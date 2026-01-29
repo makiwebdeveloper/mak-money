@@ -21,7 +21,7 @@ export async function GET(
 
     const { data: allocation, error } = await supabase
       .from("allocations")
-      .select("*, accounts(name, currency), money_pools(name, color, icon)")
+      .select("*, accounts(id, currency), money_pools(id, color, icon)")
       .eq("id", id)
       .eq("user_id", user.id)
       .single();
@@ -62,27 +62,21 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const { amount } = body;
+    const { encrypted_data } = body;
 
-    if (amount === undefined || amount < 0) {
-      return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+    if (!encrypted_data) {
+      return NextResponse.json({ error: "Missing encrypted_data" }, { status: 400 });
     }
 
     const { data: allocation, error } = await supabase
       .from("allocations")
-      .update({ amount })
+      .update({ encrypted_data })
       .eq("id", id)
       .eq("user_id", user.id)
       .select()
       .single();
 
     if (error) {
-      if (error.message.includes("exceed account balance")) {
-        return NextResponse.json(
-          { error: "Total allocations cannot exceed account balance" },
-          { status: 400 },
-        );
-      }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 

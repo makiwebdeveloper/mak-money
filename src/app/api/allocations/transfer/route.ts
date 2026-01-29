@@ -17,27 +17,20 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { account_id, pool_id, new_amount } = body;
+    const { account_id, pool_id, encrypted_data } = body;
 
     // Validate required fields
-    if (!account_id || !pool_id || new_amount === undefined) {
+    if (!account_id || !pool_id || !encrypted_data) {
       return NextResponse.json(
-        { error: "Missing required fields: account_id, pool_id, new_amount" },
+        { error: "Missing required fields: account_id, pool_id, encrypted_data" },
         { status: 400 },
       );
     }
 
-    if (new_amount < 0) {
-      return NextResponse.json(
-        { error: "Amount cannot be negative" },
-        { status: 400 },
-      );
-    }
-
-    // Get account balance
+    // Get account (no balance check - data is encrypted on client)
     const { data: account, error: accountError } = await supabase
       .from("accounts")
-      .select("id, balance")
+      .select("id")
       .eq("id", account_id)
       .eq("user_id", user.id)
       .single();
@@ -66,60 +59,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get total allocated for this account (excluding the pool we're updating)
-    const { data: allocations } = await supabase
-      .from("allocations")
-      .select("amount")
-      .eq("user_id", user.id)
-      .eq("account_id", account_id)
-      .neq("pool_id", pool_id);
+    // Note: Amount validation must be done on client-side since data is encrypted
+    // Server cannot validate amounts or balances
 
-    const totalOtherAllocations =
-      allocations?.reduce((sum, a) => sum + Number(a.amount), 0) || 0;
+    // Update or create allocation with encrypted data
+    const { error: upsertError } = await supabase.from("allocations").upsert(
+      {
+        user_id: user.id,
+        account_id,
+        pool_id,
+        encrypted_data,
+      },
+      {
+        onConflict: "user_id,account_id,pool_id",
+      },
+    );
 
-    // Check if total allocations would exceed account balance
-    if (totalOtherAllocations + new_amount > Number(account.balance)) {
+    if (upsertError) {
       return NextResponse.json(
-        {
-          error: `Insufficient balance. Account balance: ${account.balance}, Already allocated: ${totalOtherAllocations}, Requested: ${new_amount}`,
-        },
-        { status: 400 },
+        { error: upsertError.message },
+        { status: 500 },
       );
-    }
-
-    // Update or create allocation
-    if (new_amount > 0) {
-      const { error: upsertError } = await supabase.from("allocations").upsert(
-        {
-          user_id: user.id,
-          account_id,
-          pool_id,
-          amount: new_amount,
-        },
-        {
-          onConflict: "user_id,account_id,pool_id",
-        },
-      );
-
-      if (upsertError) {
-        return NextResponse.json(
-          { error: upsertError.message },
-          { status: 500 },
-        );
-      }
-    } else {
-      // If new amount is 0, delete the allocation
-      await supabase
-        .from("allocations")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("account_id", account_id)
-        .eq("pool_id", pool_id);
     }
 
     return NextResponse.json({
       success: true,
-      pool_amount: new_amount,
     });
   } catch (error) {
     console.error("Error transferring allocation:", error);
