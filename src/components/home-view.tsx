@@ -4,7 +4,7 @@ import Link from "next/link";
 import { CurrencyCode } from "@/lib/constants/currencies";
 import { formatNumber } from "@/lib/utils";
 import { useFreeBalance } from "@/lib/hooks/usePools";
-import { useTotalBalance } from "@/lib/hooks/useAccounts";
+import { useTotalBalance, useAccounts } from "@/lib/hooks/useAccounts";
 import { useTransactions } from "@/lib/hooks/useTransactions";
 import { useEffect, useState } from "react";
 
@@ -27,6 +27,7 @@ export function HomeView({
   const { data: freeBalanceData, isLoading: freeLoading } = useFreeBalance();
   const { data: balanceData, isLoading: balanceLoading } = useTotalBalance();
   const { data: transactionsData } = useTransactions();
+  const { data: accountsData } = useAccounts();
 
   // State for decrypted values
   const [totalBalance, setTotalBalance] = useState(initialTotalBalance);
@@ -53,6 +54,13 @@ export function HomeView({
 
   // Use decrypted transactions or fallback to empty array
   const displayTransactions = transactionsData?.slice(0, 5) || [];
+
+  // Helper function to get account name
+  const getAccountName = (accountId: string | null) => {
+    if (!accountId || !accountsData) return "Unknown";
+    const account = accountsData.find((acc) => acc.id === accountId);
+    return account?.name || "Unknown";
+  };
 
   const isLoading = balanceLoading || freeLoading || isDecrypting;
 
@@ -219,7 +227,7 @@ export function HomeView({
                       {tx.category || "No category"}
                     </div>
                     <div className="text-xs text-muted-foreground truncate">
-                      {tx.accounts?.name} •{" "}
+                      {getAccountName(tx.account_id || tx.from_account_id)} •{" "}
                       {new Date(tx.transaction_date).toLocaleDateString(
                         "ru-RU",
                       )}
