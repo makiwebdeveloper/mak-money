@@ -109,7 +109,11 @@ export function HomeView({
               </button>
             </div>
             <div className="text-4xl sm:text-5xl font-bold text-foreground mb-2">
-              {isLoading ? "••••••" : isBalanceVisible ? formatNumber(totalBalance) : "••••••"}
+              {isLoading
+                ? "••••••"
+                : isBalanceVisible
+                  ? formatNumber(totalBalance)
+                  : "••••••"}
             </div>
             <div className="text-xl sm:text-2xl font-semibold text-accent mb-4">
               {currency}
