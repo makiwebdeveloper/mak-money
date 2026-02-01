@@ -7,6 +7,7 @@ import { useFreeBalance } from "@/lib/hooks/usePools";
 import { useTotalBalance, useAccounts } from "@/lib/hooks/useAccounts";
 import { useTransactions } from "@/lib/hooks/useTransactions";
 import { useEffect, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 interface HomeViewProps {
   currency: CurrencyCode;
@@ -35,6 +36,7 @@ export function HomeView({
   const [accountsCount, setAccountsCount] = useState(initialAccountsCount);
   const [currency, setCurrency] = useState(initialCurrency);
   const [isDecrypting, setIsDecrypting] = useState(true);
+  const [isBalanceVisible, setIsBalanceVisible] = useState(false);
 
   // Update state when data is decrypted
   useEffect(() => {
@@ -94,9 +96,20 @@ export function HomeView({
                 </div>
               )}
               <div className="flex-1 h-px bg-gradient-to-r from-muted-foreground/30 to-transparent"></div>
+              <button
+                onClick={() => setIsBalanceVisible(!isBalanceVisible)}
+                className="p-1.5 rounded-full hover:bg-white/10 smooth-transition"
+                aria-label={isBalanceVisible ? "Hide balance" : "Show balance"}
+              >
+                {isBalanceVisible ? (
+                  <EyeOff className="w-4 h-4 text-muted-foreground" />
+                ) : (
+                  <Eye className="w-4 h-4 text-muted-foreground" />
+                )}
+              </button>
             </div>
             <div className="text-4xl sm:text-5xl font-bold text-foreground mb-2">
-              {isLoading ? "••••••" : formatNumber(totalBalance)}
+              {isLoading ? "••••••" : isBalanceVisible ? formatNumber(totalBalance) : "••••••"}
             </div>
             <div className="text-xl sm:text-2xl font-semibold text-accent mb-4">
               {currency}
