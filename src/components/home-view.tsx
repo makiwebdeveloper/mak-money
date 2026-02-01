@@ -30,32 +30,21 @@ export function HomeView({
   const { data: transactionsData } = useTransactions();
   const { data: accountsData } = useAccounts();
 
-  // State for decrypted values
-  const [totalBalance, setTotalBalance] = useState(initialTotalBalance);
-  const [freeBalance, setFreeBalance] = useState(initialFreeBalance);
-  const [accountsCount, setAccountsCount] = useState(initialAccountsCount);
-  const [currency, setCurrency] = useState(initialCurrency);
-  const [isDecrypting, setIsDecrypting] = useState(true);
+  // State for balance visibility
   const [isBalanceVisible, setIsBalanceVisible] = useState(false);
 
-  // Update state when data is decrypted
-  useEffect(() => {
-    if (balanceData && !balanceLoading) {
-      setTotalBalance(balanceData.totalBalance);
-      setAccountsCount(balanceData.accountsCount);
-      setCurrency(balanceData.currency as CurrencyCode);
-      setIsDecrypting(false);
-    }
-  }, [balanceData, balanceLoading]);
+  // Use data from hooks or fallback to initial values
+  const totalBalance = balanceData?.totalBalance ?? initialTotalBalance;
+  const freeBalance = freeBalanceData ?? initialFreeBalance;
+  const accountsCount = balanceData?.accountsCount ?? initialAccountsCount;
+  const currency = (balanceData?.currency as CurrencyCode) ?? initialCurrency;
 
-  useEffect(() => {
-    if (freeBalanceData !== undefined && !freeLoading) {
-      setFreeBalance(freeBalanceData);
-    }
-  }, [freeBalanceData, freeLoading]);
+  const isDecrypting = balanceLoading || freeLoading;
 
   // Use decrypted transactions or fallback to empty array
   const displayTransactions = transactionsData?.slice(0, 5) || [];
+
+  const isLoading = balanceLoading || freeLoading || isDecrypting;
 
   // Helper function to get account name
   const getAccountName = (accountId: string | null) => {
@@ -63,8 +52,6 @@ export function HomeView({
     const account = accountsData.find((acc) => acc.id === accountId);
     return account?.name || "Unknown";
   };
-
-  const isLoading = balanceLoading || freeLoading || isDecrypting;
 
   return (
     <div className="min-h-full bg-gradient-to-br from-background to-background/95 px-3 sm:px-4 py-6">
@@ -101,7 +88,7 @@ export function HomeView({
                 className="p-2.5 rounded-full hover:bg-white/10 smooth-transition active:scale-95"
                 aria-label={isBalanceVisible ? "Hide balance" : "Show balance"}
               >
-                {isBalanceVisible ? (
+                {!isBalanceVisible ? (
                   <EyeOff className="w-5 h-5 text-muted-foreground" />
                 ) : (
                   <Eye className="w-5 h-5 text-muted-foreground" />
