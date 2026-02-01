@@ -98,13 +98,13 @@ export function HomeView({
               <div className="flex-1 h-px bg-gradient-to-r from-muted-foreground/30 to-transparent"></div>
               <button
                 onClick={() => setIsBalanceVisible(!isBalanceVisible)}
-                className="p-1.5 rounded-full hover:bg-white/10 smooth-transition"
+                className="p-2.5 rounded-full hover:bg-white/10 smooth-transition active:scale-95"
                 aria-label={isBalanceVisible ? "Hide balance" : "Show balance"}
               >
                 {isBalanceVisible ? (
-                  <EyeOff className="w-4 h-4 text-muted-foreground" />
+                  <EyeOff className="w-5 h-5 text-muted-foreground" />
                 ) : (
-                  <Eye className="w-4 h-4 text-muted-foreground" />
+                  <Eye className="w-5 h-5 text-muted-foreground" />
                 )}
               </button>
             </div>
