@@ -123,7 +123,7 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-background/95 pt-12 md:pt-0 pb-24 md:pb-0">
-      <div className="mx-auto max-w-4xl px-3 sm:px-4 py-6 sm:py-12 lg:px-8">
+      <div className="mx-auto max-w-4xl px-3 sm:px-4 py-4 sm:py-12 lg:px-8">
         {/* Header */}
         {/* <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
@@ -132,26 +132,26 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
         </div> */}
 
         {/* Total and Free Balance */}
-        <div className="mb-6 sm:mb-8 grid gap-3 grid-cols-1 sm:grid-cols-2">
-          <div className="card-glass p-4 sm:p-5">
-            <p className="text-xs sm:text-sm font-semibold text-muted-foreground">
+        <div className="mb-4 sm:mb-8 grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2">
+          <div className="card-glass p-3 sm:p-5">
+            <p className="text-xs font-semibold text-muted-foreground">
               Total in Pools
             </p>
-            <p className="mt-1.5 sm:mt-2 text-2xl sm:text-3xl font-bold text-accent">
+            <p className="mt-1 sm:mt-2 text-xl sm:text-3xl font-bold text-accent">
               {currencySymbol}
               {formatNumber(totalBalance)}
             </p>
           </div>
-          <div className="card-glass p-4 sm:p-5 group">
+          <div className="card-glass p-3 sm:p-5 group">
             <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 smooth-transition rounded-2xl"></div>
-            <p className="relative text-xs sm:text-sm font-semibold text-muted-foreground">
+            <p className="relative text-xs font-semibold text-muted-foreground">
               Free Funds
             </p>
-            <p className="relative mt-1.5 sm:mt-2 text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400">
+            <p className="relative mt-1 sm:mt-2 text-xl sm:text-3xl font-bold text-green-600 dark:text-green-400">
               {currencySymbol}
               {formatNumber(freeBalance)}
             </p>
-            <p className="relative mt-1 sm:mt-2 text-xs sm:text-sm text-muted-foreground">
+            <p className="relative mt-0.5 sm:mt-2 text-xs text-muted-foreground">
               Available for allocation
             </p>
           </div>
@@ -161,18 +161,50 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
         {isLoading && displayedPools.length === 0 && !hasExcludedAccounts ? (
           <PoolsSkeleton />
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {/* Virtual Excluded Accounts Pool */}
             {hasExcludedAccounts && (
-              <div className="card-glass p-4 sm:p-5 border-2 border-orange-200 dark:border-orange-800/50">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="card-glass p-2.5 sm:p-5 border-2 border-orange-200 dark:border-orange-800/50">
+                {/* Mobile: Compact layout */}
+                <div className="flex sm:hidden items-center gap-2">
+                  <div
+                    className="h-8 w-8 rounded-full shadow-md shrink-0 flex items-center justify-center"
+                    style={{ backgroundColor: "#fb923c" }}
+                  >
+                    <svg
+                      className="h-4 w-4 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      />
+                    </svg>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-bold text-foreground truncate">
+                      Reserved Accounts
+                    </h3>
+                    <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">
+                      {currencySymbol}
+                      {formatNumber(excludedBalance)}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Desktop: Original layout */}
+                <div className="hidden sm:flex sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-center gap-2 min-w-0">
                     <div
-                      className="h-12 sm:h-14 w-12 sm:w-14 rounded-full shadow-lg flex-shrink-0 flex items-center justify-center"
+                      className="h-14 w-14 rounded-full shadow-lg shrink-0 flex items-center justify-center"
                       style={{ backgroundColor: "#fb923c" }}
                     >
                       <svg
-                        className="h-6 sm:h-7 w-6 sm:w-7 text-white"
+                        className="h-7 w-7 text-white"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -186,18 +218,18 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
                       </svg>
                     </div>
                     <div className="min-w-0">
-                      <h3 className="text-base sm:text-lg font-bold text-foreground truncate">
+                      <h3 className="text-lg font-bold text-foreground truncate">
                         Reserved Accounts
                       </h3>
-                      <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-muted-foreground">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         Excluded from free funds
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between sm:justify-start gap-2 flex-shrink-0">
-                    <div className="text-right sm:text-left">
-                      <p className="text-lg sm:text-2xl font-bold text-orange-600 dark:text-orange-400">
+                  <div className="flex items-center justify-start gap-2 shrink-0">
+                    <div className="text-left">
+                      <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                         {currencySymbol}
                         {formatNumber(excludedBalance)}
                       </p>
@@ -208,25 +240,101 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
             )}
 
             {displayedPools.length === 0 && !hasExcludedAccounts ? (
-              <div className="card-glass text-center py-12 sm:py-16">
+              <div className="card-glass text-center py-8 sm:py-16">
                 <p className="text-sm sm:text-base text-muted-foreground">
                   No pools. Create your first pool.
                 </p>
               </div>
             ) : (
               displayedPools.map((pool) => (
-                <div key={pool.id} className="card-glass p-4 sm:p-5">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div key={pool.id} className="card-glass p-2.5 sm:p-5">
+                  {/* Mobile: Single row layout */}
+                  <div className="flex sm:hidden items-center gap-2">
+                    <div
+                      className="h-8 w-8 rounded-full shadow-md shrink-0"
+                      style={{ backgroundColor: pool.color }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-bold text-foreground truncate">
+                        {pool.name}
+                      </h3>
+                      <p className="text-xs font-semibold text-accent">
+                        {currencySymbol}
+                        {formatNumber(getPoolBalance(pool.id))}
+                      </p>
+                    </div>
+                    {/* Mobile actions */}
+                    <div className="flex gap-1 shrink-0">
+                      {pool.type !== "free" && (
+                        <button
+                          onClick={() =>
+                            setEditingPool({
+                              id: pool.id,
+                              name: pool.name || "Unnamed Pool",
+                              amount: getPoolBalance(pool.id),
+                            })
+                          }
+                          disabled={isLoading || pool.id.startsWith("temp-")}
+                          className="smooth-transition rounded-md p-1.5 bg-gradient-to-r from-accent to-accent/80 text-white active:scale-95 disabled:opacity-50"
+                          title="Allocate funds"
+                        >
+                          <svg
+                            className="h-3.5 w-3.5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2.5}
+                              d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                            />
+                          </svg>
+                        </button>
+                      )}
+                      {pool.type !== "free" && (
+                        <button
+                          onClick={() =>
+                            setDeleteConfirm({
+                              id: pool.id,
+                              name: pool.name || "Unnamed Pool",
+                            })
+                          }
+                          disabled={isLoading}
+                          className="smooth-transition rounded-md p-1 glass hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 active:scale-95"
+                          title="Delete pool"
+                        >
+                          <svg
+                            className="h-3.5 w-3.5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Desktop: Original layout */}
+                  <div className="hidden sm:flex sm:items-center sm:justify-between gap-3">
                     <div className="flex items-center gap-2 min-w-0">
                       <div
-                        className="h-12 sm:h-14 w-12 sm:w-14 rounded-full shadow-lg flex-shrink-0"
+                        className="h-14 w-14 rounded-full shadow-lg shrink-0"
                         style={{ backgroundColor: pool.color }}
                       />
                       <div className="min-w-0">
-                        <h3 className="text-base sm:text-lg font-bold text-foreground truncate">
+                        <h3 className="text-lg font-bold text-foreground truncate">
                           {pool.name}
                         </h3>
-                        <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm capitalize text-muted-foreground">
+                        <p className="mt-1 text-xs capitalize text-muted-foreground">
                           {pool.type === "free"
                             ? "Free"
                             : pool.type === "custom"
@@ -236,17 +344,16 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between sm:justify-start gap-2 flex-shrink-0">
-                      <div className="text-right sm:text-left">
-                        <p className="text-lg sm:text-2xl font-bold text-accent">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="text-left">
+                        <p className="text-2xl font-bold text-accent">
                           {currencySymbol}
                           {formatNumber(getPoolBalance(pool.id))}
                         </p>
                       </div>
 
-                      {/* Pool actions */}
-                      <div className="flex gap-2 sm:gap-3">
-                        {/* Allocation management button - only for non-free pools */}
+                      {/* Desktop actions */}
+                      <div className="flex gap-3">
                         {pool.type !== "free" && (
                           <button
                             onClick={() =>
@@ -257,17 +364,28 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
                               })
                             }
                             disabled={isLoading || pool.id.startsWith("temp-")}
-                            className="smooth-transition rounded-xl px-3 sm:px-6 py-2.5 sm:py-3 font-semibold text-xs sm:text-sm bg-gradient-to-r from-accent to-accent/80 text-white hover:shadow-lg active:scale-95 touch-target disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="smooth-transition rounded-xl p-3 bg-gradient-to-r from-accent to-accent/80 text-white hover:shadow-lg active:scale-95 touch-target disabled:opacity-50 disabled:cursor-not-allowed"
                             title={
                               pool.id.startsWith("temp-")
                                 ? "Pool is being created..."
                                 : "Allocate funds"
                             }
                           >
-                            Allocate
+                            <svg
+                              className="h-5 w-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                              />
+                            </svg>
                           </button>
                         )}
-                        {/* Delete button - only for non-free pools */}
                         {pool.type !== "free" && (
                           <button
                             onClick={() =>
@@ -305,11 +423,11 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
         )}
 
         {/* Create New Pool */}
-        <div className="mt-8">
+        <div className="mt-4 sm:mt-8">
           {!isCreating ? (
             <button
               onClick={() => setIsCreating(true)}
-              className="glass-sm w-full smooth-transition rounded-2xl border-2 border-dashed border-accent/30 p-6 sm:p-8 text-center font-semibold text-xs sm:text-sm text-muted-foreground hover:border-accent hover:shadow-md touch-target"
+              className="glass-sm w-full smooth-transition rounded-2xl border-2 border-dashed border-accent/30 p-4 sm:p-8 text-center font-semibold text-xs sm:text-sm text-muted-foreground hover:border-accent hover:shadow-md touch-target"
             >
               Create New Pool
             </button>
