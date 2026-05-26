@@ -5,6 +5,7 @@ import { Database, DecryptedAccount } from "@/lib/types/database";
 import { CURRENCIES, CurrencyCode } from "@/lib/constants/currencies";
 import { AccountsSkeleton } from "@/components/accounts-skeleton";
 import ConfirmDeleteModal from "@/components/confirm-delete-modal";
+import { EncryptionKeyRequired } from "@/components/encryption-key-required";
 import { CurrencyDisplay } from "@/components/ui/currency-display";
 import {
   useAccounts,
@@ -23,7 +24,7 @@ export default function AccountsClient({
   defaultCurrency,
 }: AccountsClientProps) {
   // Use react-query hooks - fetch and decrypt data on client only
-  const { data: accounts, isLoading } = useAccounts();
+  const { data: accounts, isLoading, isKeyAvailable } = useAccounts();
   const createAccount = useCreateAccount();
   const updateAccount = useUpdateAccount();
   const deleteAccount = usePermanentDeleteAccount();
@@ -101,6 +102,10 @@ export default function AccountsClient({
   // Show loading skeleton while fetching and decrypting accounts
   if (isLoading) {
     return <AccountsSkeleton />;
+  }
+
+  if (isKeyAvailable === false) {
+    return <EncryptionKeyRequired />;
   }
 
   return (
@@ -213,7 +218,7 @@ export default function AccountsClient({
                 >
                   <span className="font-semibold">Exclude from free money</span>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    This account won't be counted in available free balance
+                    This account won&apos;t be counted in available free balance
                     (e.g., savings)
                   </p>
                 </label>

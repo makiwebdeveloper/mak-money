@@ -19,10 +19,12 @@ export const accountKeys = {
 
 // Fetch and decrypt accounts
 export function useAccounts() {
-  const { decryptAccountRow } = useAccountEncryption();
+  const { decryptAccountRow, isKeyAvailable, isLoading: isKeyLoading } =
+    useAccountEncryption();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: accountKeys.list(),
+    enabled: !isKeyLoading && isKeyAvailable === true,
     queryFn: async (): Promise<DecryptedAccount[]> => {
       // Fetch encrypted data from server
       const response = await fetch("/api/accounts");
@@ -47,6 +49,13 @@ export function useAccounts() {
       return decrypted.filter((acc): acc is DecryptedAccount => acc !== null);
     },
   });
+
+  return {
+    ...query,
+    isLoading: isKeyLoading || query.isLoading,
+    isKeyAvailable,
+    isKeyLoading,
+  };
 }
 
 // Fetch total balance (calculated on client after decryption with currency conversion)

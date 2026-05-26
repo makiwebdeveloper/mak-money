@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Database } from "@/lib/types/database";
 import { formatNumber } from "@/lib/utils";
 import { TransactionsSkeleton } from "@/components/transactions-skeleton";
+import { EncryptionKeyRequired } from "@/components/encryption-key-required";
 import { CurrencyDisplay } from "@/components/ui/currency-display";
 import { CurrencyCode } from "@/lib/constants/currencies";
 import {
@@ -21,8 +22,11 @@ type Account = Database["public"]["Tables"]["accounts"]["Row"];
 
 export default function TransactionsClient() {
   // Use react-query hooks - fetch and decrypt on client only
-  const { data: transactions, isLoading: transactionsLoading } =
-    useTransactions();
+  const {
+    data: transactions,
+    isLoading: transactionsLoading,
+    isKeyAvailable,
+  } = useTransactions();
   const { data: accounts, isLoading: accountsLoading } = useAccounts();
   const createTransaction = useCreateTransaction();
 
@@ -38,6 +42,10 @@ export default function TransactionsClient() {
   // Show loading state while fetching and decrypting data
   if (transactionsLoading || accountsLoading) {
     return <TransactionsSkeleton />;
+  }
+
+  if (isKeyAvailable === false) {
+    return <EncryptionKeyRequired />;
   }
 
   // Ensure we have arrays to work with

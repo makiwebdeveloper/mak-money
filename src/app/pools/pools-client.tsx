@@ -7,6 +7,7 @@ import { formatNumber } from "@/lib/utils";
 import AllocationManager from "@/components/allocation-manager";
 import { PoolsSkeleton } from "@/components/pools-skeleton";
 import ConfirmDeleteModal from "@/components/confirm-delete-modal";
+import { EncryptionKeyRequired } from "@/components/encryption-key-required";
 import {
   usePools,
   useCreatePool,
@@ -33,7 +34,11 @@ interface PoolsClientProps {
 
 export default function PoolsClient({ currency }: PoolsClientProps) {
   // Use react-query hooks - fetch and decrypt on client only
-  const { data: poolsData, isLoading: poolsLoading } = usePools();
+  const {
+    data: poolsData,
+    isLoading: poolsLoading,
+    isKeyAvailable,
+  } = usePools();
   const { data: allocations = [], isLoading: allocationsLoading } =
     useAllocations();
   const pools: Pool[] = (poolsData as Pool[]) || [];
@@ -61,6 +66,10 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
   // Show loading state while fetching and decrypting data
   if (poolsLoading || allocationsLoading) {
     return <PoolsSkeleton />;
+  }
+
+  if (isKeyAvailable === false) {
+    return <EncryptionKeyRequired />;
   }
 
   const currencySymbol =

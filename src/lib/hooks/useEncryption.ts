@@ -93,7 +93,7 @@ export function useEncryption() {
  * Hook for encrypting/decrypting accounts
  */
 export function useAccountEncryption() {
-  const { encrypt, decrypt } = useEncryption();
+  const { encrypt, decrypt, isKeyAvailable, isLoading } = useEncryption();
 
   const encryptAccount = useCallback(
     async (name: string, balance: number): Promise<EncryptedData> => {
@@ -152,6 +152,8 @@ export function useAccountEncryption() {
     encryptAccount,
     decryptAccount,
     decryptAccountRow,
+    isKeyAvailable,
+    isLoading,
   };
 }
 
@@ -159,7 +161,7 @@ export function useAccountEncryption() {
  * Hook for encrypting/decrypting transactions
  */
 export function useTransactionEncryption() {
-  const { encrypt, decrypt } = useEncryption();
+  const { encrypt, decrypt, isKeyAvailable, isLoading } = useEncryption();
 
   const encryptTransaction = useCallback(
     async (
@@ -227,6 +229,8 @@ export function useTransactionEncryption() {
     encryptTransaction,
     decryptTransaction,
     decryptTransactionRow,
+    isKeyAvailable,
+    isLoading,
   };
 }
 
@@ -234,7 +238,7 @@ export function useTransactionEncryption() {
  * Hook for encrypting/decrypting money pools
  */
 export function usePoolEncryption() {
-  const { encrypt, decrypt } = useEncryption();
+  const { encrypt, decrypt, isKeyAvailable, isLoading } = useEncryption();
 
   const encryptPool = useCallback(
     async (name: string): Promise<EncryptedData> => {
@@ -290,6 +294,8 @@ export function usePoolEncryption() {
     encryptPool,
     decryptPool,
     decryptPoolRow,
+    isKeyAvailable,
+    isLoading,
   };
 }
 
@@ -297,7 +303,7 @@ export function usePoolEncryption() {
  * Hook for encrypting/decrypting allocations
  */
 export function useAllocationEncryption() {
-  const { encrypt, decrypt } = useEncryption();
+  const { encrypt, decrypt, isKeyAvailable, isLoading } = useEncryption();
 
   const encryptAllocation = useCallback(
     async (amount: number): Promise<EncryptedData> => {
@@ -351,5 +357,7 @@ export function useAllocationEncryption() {
     encryptAllocation,
     decryptAllocation,
     decryptAllocationRow,
+    isKeyAvailable,
+    isLoading,
   };
 }

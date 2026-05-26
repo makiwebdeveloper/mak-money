@@ -130,6 +130,7 @@ async function deleteKeyFromDB(): Promise<void> {
 export async function initializeUserKey(): Promise<CryptoKey> {
   const key = await generateEncryptionKey();
   await storeKeyInDB(key);
+  keyCache = key;
   return key;
 }
 
@@ -168,6 +169,7 @@ export async function importUserKey(keyString: string): Promise<void> {
   try {
     const key = await importKey(keyString);
     await storeKeyInDB(key);
+    keyCache = key;
   } catch (error) {
     throw new Error('Invalid encryption key format');
   }
@@ -179,6 +181,7 @@ export async function importUserKey(keyString: string): Promise<void> {
  */
 export async function deleteUserKey(): Promise<void> {
   await deleteKeyFromDB();
+  keyCache = null;
 }
 
 /**

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   getRecoveryPhrase,
-  importUserKey,
+  restoreFromRecoveryPhrase,
   deleteUserKey,
   hasUserKey,
 } from '@/lib/services/key-management-service';
@@ -52,7 +52,7 @@ export default function EncryptionSettingsPage() {
 
     setIsLoading(true);
     try {
-      await importUserKey(importPhrase.trim());
+      await restoreFromRecoveryPhrase(importPhrase.trim());
       alert(
         'Recovery phrase imported successfully! Your data should now be accessible.',
       );

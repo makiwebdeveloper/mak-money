@@ -17,10 +17,12 @@ export const poolKeys = {
 
 // Fetch and decrypt pools
 export function usePools() {
-  const { decryptPoolRow } = usePoolEncryption();
+  const { decryptPoolRow, isKeyAvailable, isLoading: isKeyLoading } =
+    usePoolEncryption();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: poolKeys.list(),
+    enabled: !isKeyLoading && isKeyAvailable === true,
     queryFn: async (): Promise<DecryptedPool[]> => {
       const response = await fetch("/api/pools");
       if (!response.ok) {
@@ -56,6 +58,13 @@ export function usePools() {
       return decrypted.filter((pool): pool is DecryptedPool => pool !== null);
     },
   });
+
+  return {
+    ...query,
+    isLoading: isKeyLoading || query.isLoading,
+    isKeyAvailable,
+    isKeyLoading,
+  };
 }
 
 // Calculate free balance from decrypted accounts (client-side only)

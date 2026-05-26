@@ -20,10 +20,12 @@ export const transactionKeys = {
 
 // Fetch transactions
 export function useTransactions() {
-  const { decryptTransactionRow } = useTransactionEncryption();
+  const { decryptTransactionRow, isKeyAvailable, isLoading: isKeyLoading } =
+    useTransactionEncryption();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: transactionKeys.list(),
+    enabled: !isKeyLoading && isKeyAvailable === true,
     queryFn: async (): Promise<DecryptedTransaction[]> => {
       const response = await fetch("/api/transactions");
       if (!response.ok) {
@@ -50,6 +52,13 @@ export function useTransactions() {
       return decrypted.filter((tx): tx is DecryptedTransaction => tx !== null);
     },
   });
+
+  return {
+    ...query,
+    isLoading: isKeyLoading || query.isLoading,
+    isKeyAvailable,
+    isKeyLoading,
+  };
 }
 
 // Create transaction

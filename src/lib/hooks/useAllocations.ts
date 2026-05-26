@@ -11,10 +11,12 @@ export const allocationKeys = {
 
 // Fetch and decrypt allocations
 export function useAllocations() {
-  const { decryptAllocationRow } = useAllocationEncryption();
+  const { decryptAllocationRow, isKeyAvailable, isLoading: isKeyLoading } =
+    useAllocationEncryption();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: allocationKeys.list(),
+    enabled: !isKeyLoading && isKeyAvailable === true,
     queryFn: async (): Promise<DecryptedAllocation[]> => {
       // Fetch encrypted data from server
       const response = await fetch("/api/allocations");
@@ -39,4 +41,11 @@ export function useAllocations() {
       return decrypted.filter((alloc): alloc is DecryptedAllocation => alloc !== null);
     },
   });
+
+  return {
+    ...query,
+    isLoading: isKeyLoading || query.isLoading,
+    isKeyAvailable,
+    isKeyLoading,
+  };
 }

@@ -6,7 +6,8 @@ import { formatNumber } from "@/lib/utils";
 import { useFreeBalance } from "@/lib/hooks/usePools";
 import { useTotalBalance, useAccounts } from "@/lib/hooks/useAccounts";
 import { useTransactions } from "@/lib/hooks/useTransactions";
-import { useEffect, useState } from "react";
+import { EncryptionKeyRequired } from "@/components/encryption-key-required";
+import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
 interface HomeViewProps {
@@ -28,7 +29,7 @@ export function HomeView({
   const { data: freeBalanceData, isLoading: freeLoading } = useFreeBalance();
   const { data: balanceData, isLoading: balanceLoading } = useTotalBalance();
   const { data: transactionsData } = useTransactions();
-  const { data: accountsData } = useAccounts();
+  const { data: accountsData, isKeyAvailable } = useAccounts();
 
   // State for balance visibility
   const [isBalanceVisible, setIsBalanceVisible] = useState(false);
@@ -45,6 +46,10 @@ export function HomeView({
   const displayTransactions = transactionsData?.slice(0, 5) || [];
 
   const isLoading = balanceLoading || freeLoading || isDecrypting;
+
+  if (isKeyAvailable === false) {
+    return <EncryptionKeyRequired />;
+  }
 
   // Helper function to get account name
   const getAccountName = (accountId: string | null) => {
