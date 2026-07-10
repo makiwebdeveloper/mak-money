@@ -62,6 +62,7 @@ export interface DecryptedPool {
   color: string;
   icon: string;
   is_active: boolean;
+  sort_order: number;
   created_at: string;
   updated_at: string;
 }
@@ -114,6 +115,7 @@ export type Database = {
           color: string;
           icon: string;
           is_active: boolean;
+          sort_order: number;
           encrypted_data: EncryptedData | null;
           created_at: string;
           updated_at: string;
@@ -126,6 +128,7 @@ export type Database = {
           color?: string;
           icon?: string;
           is_active?: boolean;
+          sort_order?: number;
           encrypted_data?: EncryptedData | null;
           created_at?: string;
           updated_at?: string;
@@ -138,6 +141,7 @@ export type Database = {
           color?: string;
           icon?: string;
           is_active?: boolean;
+          sort_order?: number;
           encrypted_data?: EncryptedData | null;
           created_at?: string;
           updated_at?: string;

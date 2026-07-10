@@ -24,6 +24,15 @@ function generateRandomColor(): string {
   return colors[Math.floor(Math.random() * colors.length)];
 }
 
+function isMissingSortOrderColumn(error: { message?: string } | null): boolean {
+  const message = error?.message ?? "";
+
+  return (
+    message.includes("money_pools.sort_order") ||
+    (message.includes("sort_order") && message.includes("money_pools"))
+  );
+}
+
 // GET /api/pools - Get all pools (encrypted data only, no balance calculation)
 export async function GET() {
   try {
@@ -37,11 +46,30 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: pools, error } = await supabase
+    const orderedPoolsResult = await supabase
       .from("money_pools")
       .select("*")
       .eq("user_id", user.id)
+      .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true });
+
+    let pools = orderedPoolsResult.data;
+    let error = orderedPoolsResult.error;
+
+    if (isMissingSortOrderColumn(error)) {
+      const fallbackPoolsResult = await supabase
+        .from("money_pools")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true });
+
+      pools =
+        fallbackPoolsResult.data?.map((pool, index) => ({
+          ...pool,
+          sort_order: index,
+        })) ?? null;
+      error = fallbackPoolsResult.error;
+    }
 
     if (error) {
       console.error("Error fetching pools:", error);
@@ -89,6 +117,16 @@ export async function POST(request: Request) {
       );
     }
 
+    const { data: lastPool, error: lastPoolError } = await supabase
+      .from("money_pools")
+      .select("sort_order")
+      .eq("user_id", user.id)
+      .order("sort_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const supportsSortOrder = !isMissingSortOrderColumn(lastPoolError);
+
     const { data: pool, error } = await supabase
       .from("money_pools")
       .insert({
@@ -97,6 +135,9 @@ export async function POST(request: Request) {
         type: type || "custom",
         color: color || generateRandomColor(),
         icon: icon || "wallet",
+        ...(supportsSortOrder
+          ? { sort_order: (lastPool?.sort_order ?? -1) + 1 }
+          : {}),
       })
       .select()
       .single();

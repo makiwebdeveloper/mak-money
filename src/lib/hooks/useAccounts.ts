@@ -59,7 +59,7 @@ export function useAccounts() {
 }
 
 // Fetch total balance (calculated on client after decryption with currency conversion)
-export function useTotalBalance() {
+export function useTotalBalance(fallbackCurrency: CurrencyCode = "USD") {
   const { data: accounts, isLoading: accountsLoading } = useAccounts();
   const { data: defaultCurrency, isLoading: currencyLoading } =
     useUserCurrency();
@@ -98,7 +98,11 @@ export function useTotalBalance() {
   const accountsCount = accounts?.length || 0;
 
   return {
-    data: { totalBalance, currency: defaultCurrency || "USD", accountsCount },
+    data: {
+      totalBalance,
+      currency: defaultCurrency || fallbackCurrency,
+      accountsCount,
+    },
     isLoading: accountsLoading || currencyLoading || isConverting,
   };
 }

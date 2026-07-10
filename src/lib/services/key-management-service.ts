@@ -17,12 +17,19 @@ const DB_NAME = 'mak_money_secure_storage';
 const DB_VERSION = 1;
 const STORE_NAME = 'encryption_keys';
 const KEY_ID = 'master_encryption_key';
+export const ENCRYPTION_KEY_CHANGED_EVENT = 'mak-money:encryption-key-changed';
 
 interface StoredKey {
   id: string;
   keyData: string;
   createdAt: number;
   lastUsed: number;
+}
+
+function notifyKeyChanged(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(ENCRYPTION_KEY_CHANGED_EVENT));
+  }
 }
 
 /**
@@ -131,6 +138,7 @@ export async function initializeUserKey(): Promise<CryptoKey> {
   const key = await generateEncryptionKey();
   await storeKeyInDB(key);
   keyCache = key;
+  notifyKeyChanged();
   return key;
 }
 
@@ -170,6 +178,7 @@ export async function importUserKey(keyString: string): Promise<void> {
     const key = await importKey(keyString);
     await storeKeyInDB(key);
     keyCache = key;
+    notifyKeyChanged();
   } catch (error) {
     throw new Error('Invalid encryption key format');
   }
@@ -182,6 +191,7 @@ export async function importUserKey(keyString: string): Promise<void> {
 export async function deleteUserKey(): Promise<void> {
   await deleteKeyFromDB();
   keyCache = null;
+  notifyKeyChanged();
 }
 
 /**
@@ -225,4 +235,5 @@ export async function getCachedUserKey(): Promise<CryptoKey | null> {
  */
 export function clearKeyCache(): void {
   keyCache = undefined;
+  notifyKeyChanged();
 }

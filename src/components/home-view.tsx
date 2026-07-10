@@ -339,7 +339,8 @@ export function HomeView({
 }: HomeViewProps) {
   // Use react-query hooks for live updates with encrypted data
   const { data: freeBalanceData, isLoading: freeLoading } = useFreeBalance();
-  const { data: balanceData, isLoading: balanceLoading } = useTotalBalance();
+  const { data: balanceData, isLoading: balanceLoading } =
+    useTotalBalance(initialCurrency);
   const { data: transactionsData } = useTransactions();
   const { data: accountsData, isKeyAvailable } = useAccounts();
 

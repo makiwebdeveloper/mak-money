@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { DragEvent, useMemo, useState } from "react";
 import { Database } from "@/lib/types/database";
 import { CURRENCIES } from "@/lib/constants/currencies";
 import { formatNumber } from "@/lib/utils";
@@ -8,12 +8,14 @@ import AllocationManager from "@/components/allocation-manager";
 import { PoolsSkeleton } from "@/components/pools-skeleton";
 import ConfirmDeleteModal from "@/components/confirm-delete-modal";
 import { EncryptionKeyRequired } from "@/components/encryption-key-required";
+import { GripVertical, Trash2, WalletCards } from "lucide-react";
 import {
   usePools,
   useCreatePool,
   usePermanentDeletePool,
   useFreeBalance,
   useExcludedAccountsBalance,
+  useReorderPools,
 } from "@/lib/hooks/usePools";
 import { useAllocations } from "@/lib/hooks/useAllocations";
 
@@ -41,18 +43,19 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
   } = usePools();
   const { data: allocations = [], isLoading: allocationsLoading } =
     useAllocations();
-  const pools: Pool[] = (poolsData as Pool[]) || [];
+  const pools = useMemo(() => (poolsData as Pool[]) || [], [poolsData]);
   const { data: freeBalance = 0 } = useFreeBalance();
   const { data: excludedBalance = 0, hasExcludedAccounts = false } =
     useExcludedAccountsBalance();
 
-  console.log("All allocations:", allocations);
-  console.log("All pools:", pools);
   const createPool = useCreatePool();
   const deletePool = usePermanentDeletePool();
+  const reorderPools = useReorderPools();
 
   const [isCreating, setIsCreating] = useState(false);
   const [newPoolName, setNewPoolName] = useState("");
+  const [draggedPoolId, setDraggedPoolId] = useState<string | null>(null);
+  const [dragOverPoolId, setDragOverPoolId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{
     id: string;
     name: string;
@@ -63,6 +66,22 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
     amount: number;
   } | null>(null);
 
+  const currencySymbol =
+    CURRENCIES.find((c) => c.code === currency)?.symbol || "$";
+
+  // Only show active pools (excluding Free pool since it's shown separately above)
+  const displayedPools = useMemo(
+    () =>
+      pools
+        .filter((pool) => pool.is_active && pool.type !== "free")
+        .sort((a, b) => {
+          const orderDifference = (a.sort_order ?? 0) - (b.sort_order ?? 0);
+          if (orderDifference !== 0) return orderDifference;
+          return a.created_at.localeCompare(b.created_at);
+        }),
+    [pools],
+  );
+
   // Show loading state while fetching and decrypting data
   if (poolsLoading || allocationsLoading) {
     return <PoolsSkeleton />;
@@ -71,14 +90,6 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
   if (isKeyAvailable === false) {
     return <EncryptionKeyRequired />;
   }
-
-  const currencySymbol =
-    CURRENCIES.find((c) => c.code === currency)?.symbol || "$";
-
-  // Only show active pools (excluding Free pool since it's shown separately above)
-  const displayedPools = pools.filter(
-    (pool) => pool.is_active && pool.type !== "free",
-  );
 
   const handleCreatePool = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,13 +125,68 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
     const poolAllocations = allocations.filter(
       (allocation) => allocation.pool_id === poolId,
     );
-    console.log("Pool allocations for", poolId, ":", poolAllocations);
-    const balance = poolAllocations.reduce((sum, allocation) => {
-      console.log("Adding allocation amount:", allocation.amount);
-      return sum + (allocation.amount || 0);
-    }, 0);
-    console.log("Total pool balance:", balance);
-    return balance;
+    return poolAllocations.reduce(
+      (sum, allocation) => sum + (allocation.amount || 0),
+      0,
+    );
+  };
+
+  const openAllocation = (pool: Pool) => {
+    if (isLoading || pool.id.startsWith("temp-")) return;
+
+    setEditingPool({
+      id: pool.id,
+      name: pool.name || "Unnamed Pool",
+      amount: getPoolBalance(pool.id),
+    });
+  };
+
+  const handleDragStart = (event: DragEvent, poolId: string) => {
+    if (poolId.startsWith("temp-")) {
+      event.preventDefault();
+      return;
+    }
+
+    setDraggedPoolId(poolId);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", poolId);
+  };
+
+  const handleDragOver = (event: DragEvent, poolId: string) => {
+    event.preventDefault();
+    if (draggedPoolId && draggedPoolId !== poolId) {
+      setDragOverPoolId(poolId);
+    }
+  };
+
+  const handleDrop = async (event: DragEvent, targetPoolId: string) => {
+    event.preventDefault();
+
+    const sourcePoolId =
+      draggedPoolId || event.dataTransfer.getData("text/plain");
+    setDraggedPoolId(null);
+    setDragOverPoolId(null);
+
+    if (!sourcePoolId || sourcePoolId === targetPoolId) return;
+
+    const sourceIndex = displayedPools.findIndex(
+      (pool) => pool.id === sourcePoolId,
+    );
+    const targetIndex = displayedPools.findIndex(
+      (pool) => pool.id === targetPoolId,
+    );
+
+    if (sourceIndex === -1 || targetIndex === -1) return;
+
+    const nextPools = [...displayedPools];
+    const [movedPool] = nextPools.splice(sourceIndex, 1);
+    nextPools.splice(targetIndex, 0, movedPool);
+
+    try {
+      await reorderPools.mutateAsync(nextPools.map((pool) => pool.id));
+    } catch (error) {
+      console.error("Error reordering pools:", error);
+    }
   };
 
   // Total in Pools = sum of all active pools EXCEPT Free pool (only allocated money)
@@ -256,9 +322,42 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
               </div>
             ) : (
               displayedPools.map((pool) => (
-                <div key={pool.id} className="card-glass p-2.5 sm:p-5">
+                <div
+                  key={pool.id}
+                  className={`card-glass p-2.5 sm:p-5 cursor-pointer ${
+                    draggedPoolId === pool.id ? "opacity-60" : ""
+                  } ${
+                    dragOverPoolId === pool.id
+                      ? "ring-2 ring-accent/60"
+                      : ""
+                  }`}
+                  draggable={!pool.id.startsWith("temp-")}
+                  onClick={() => openAllocation(pool)}
+                  onDragStart={(event) => handleDragStart(event, pool.id)}
+                  onDragOver={(event) => handleDragOver(event, pool.id)}
+                  onDrop={(event) => handleDrop(event, pool.id)}
+                  onDragEnd={() => {
+                    setDraggedPoolId(null);
+                    setDragOverPoolId(null);
+                  }}
+                  title={
+                    pool.id.startsWith("temp-")
+                      ? "Pool is being created..."
+                      : "Open allocation"
+                  }
+                >
                   {/* Mobile: Single row layout */}
                   <div className="flex sm:hidden items-center gap-2">
+                    <button
+                      type="button"
+                      draggable={false}
+                      onClick={(event) => event.stopPropagation()}
+                      disabled={pool.id.startsWith("temp-")}
+                      className="smooth-transition -ml-1 rounded-md p-1 text-muted-foreground hover:bg-white/10 active:scale-95 cursor-grab disabled:opacity-40"
+                      title="Drag to reorder"
+                    >
+                      <GripVertical className="h-4 w-4" />
+                    </button>
                     <div
                       className="h-8 w-8 rounded-full shadow-md shrink-0"
                       style={{ backgroundColor: pool.color }}
@@ -276,65 +375,51 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
                     <div className="flex gap-1 shrink-0">
                       {pool.type !== "free" && (
                         <button
-                          onClick={() =>
-                            setEditingPool({
-                              id: pool.id,
-                              name: pool.name || "Unnamed Pool",
-                              amount: getPoolBalance(pool.id),
-                            })
-                          }
+                          draggable={false}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openAllocation(pool);
+                          }}
                           disabled={isLoading || pool.id.startsWith("temp-")}
                           className="smooth-transition rounded-md p-1.5 bg-gradient-to-r from-accent to-accent/80 text-white active:scale-95 disabled:opacity-50"
                           title="Allocate funds"
                         >
-                          <svg
-                            className="h-3.5 w-3.5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2.5}
-                              d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-                            />
-                          </svg>
+                          <WalletCards className="h-3.5 w-3.5" />
                         </button>
                       )}
                       {pool.type !== "free" && (
                         <button
-                          onClick={() =>
+                          draggable={false}
+                          onClick={(event) => {
+                            event.stopPropagation();
                             setDeleteConfirm({
                               id: pool.id,
                               name: pool.name || "Unnamed Pool",
-                            })
-                          }
+                            });
+                          }}
                           disabled={isLoading}
                           className="smooth-transition rounded-md p-1 glass hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 active:scale-95"
                           title="Delete pool"
                         >
-                          <svg
-                            className="h-3.5 w-3.5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Desktop: Original layout */}
                   <div className="hidden sm:flex sm:items-center sm:justify-between gap-3">
                     <div className="flex items-center gap-2 min-w-0">
+                      <button
+                        type="button"
+                        draggable={false}
+                        onClick={(event) => event.stopPropagation()}
+                        disabled={pool.id.startsWith("temp-")}
+                        className="smooth-transition -ml-2 rounded-lg p-2 text-muted-foreground hover:bg-white/10 active:scale-95 cursor-grab disabled:cursor-not-allowed disabled:opacity-40"
+                        title="Drag to reorder"
+                      >
+                        <GripVertical className="h-5 w-5" />
+                      </button>
                       <div
                         className="h-14 w-14 rounded-full shadow-lg shrink-0"
                         style={{ backgroundColor: pool.color }}
@@ -365,13 +450,11 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
                       <div className="flex gap-3">
                         {pool.type !== "free" && (
                           <button
-                            onClick={() =>
-                              setEditingPool({
-                                id: pool.id,
-                                name: pool.name || "Unnamed Pool",
-                                amount: getPoolBalance(pool.id),
-                              })
-                            }
+                            draggable={false}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openAllocation(pool);
+                            }}
                             disabled={isLoading || pool.id.startsWith("temp-")}
                             className="smooth-transition rounded-xl p-3 bg-gradient-to-r from-accent to-accent/80 text-white hover:shadow-lg active:scale-95 touch-target disabled:opacity-50 disabled:cursor-not-allowed"
                             title={
@@ -380,46 +463,24 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
                                 : "Allocate funds"
                             }
                           >
-                            <svg
-                              className="h-5 w-5"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-                              />
-                            </svg>
+                            <WalletCards className="h-5 w-5" />
                           </button>
                         )}
                         {pool.type !== "free" && (
                           <button
-                            onClick={() =>
+                            draggable={false}
+                            onClick={(event) => {
+                              event.stopPropagation();
                               setDeleteConfirm({
                                 id: pool.id,
                                 name: pool.name || "Unnamed Pool",
-                              })
-                            }
+                              });
+                            }}
                             disabled={isLoading}
                             className="smooth-transition rounded-lg p-2 glass hover:shadow-md hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 hover:text-red-600 active:scale-95 touch-target disabled:opacity-50"
                             title="Delete pool"
                           >
-                            <svg
-                              className="h-5 w-5"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
+                            <Trash2 className="h-5 w-5" />
                           </button>
                         )}
                       </div>

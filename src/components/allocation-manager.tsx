@@ -75,18 +75,18 @@ export default function AllocationManager({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 p-4 backdrop-blur-md dark:bg-black/30"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
+        className="glass-lg w-full max-w-md rounded-2xl p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">Allocate Funds</h2>
+          <h2 className="text-xl font-bold text-foreground">Allocate Funds</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="smooth-transition rounded-lg p-1.5 text-muted-foreground hover:bg-white/20 hover:text-foreground"
           >
             <svg
               className="h-6 w-6"
@@ -104,14 +104,14 @@ export default function AllocationManager({
           </button>
         </div>
 
-        <div className="mb-4 rounded-lg bg-blue-50 p-4">
-          <div className="mb-2 text-sm font-medium text-blue-900">
+        <div className="glass-sm mb-4 rounded-lg p-4">
+          <div className="mb-2 text-sm font-medium text-foreground">
             📊 {poolName}
           </div>
-          <div className="text-xs text-blue-700">
+          <div className="text-xs text-muted-foreground">
             Current amount: <strong>{formatNumber(currentAmount)}</strong>
           </div>
-          <div className="text-xs text-blue-700">
+          <div className="text-xs text-muted-foreground">
             Free funds: <strong>{formatNumber(freeBalance)}</strong>
           </div>
         </div>

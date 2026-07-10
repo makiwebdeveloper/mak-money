@@ -249,6 +249,7 @@ export function useCreatePool() {
           // Make random color and icon for optimistic update
           color: "#d4d4d4",
           icon: "piggy-bank",
+          sort_order: old.length,
         };
         return [...old, optimisticPool];
       });
@@ -262,6 +263,70 @@ export function useCreatePool() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: poolKeys.list() });
+    },
+  });
+}
+
+// Reorder pools
+export function useReorderPools() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (poolIds: string[]) => {
+      const response = await fetch("/api/pools/reorder", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ poolIds }),
+      });
+
+      if (response.status === 409) {
+        return { success: false, persisted: false };
+      }
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to reorder pools");
+      }
+
+      return response.json();
+    },
+    onMutate: async (poolIds) => {
+      await queryClient.cancelQueries({ queryKey: poolKeys.list() });
+
+      const previousPools = queryClient.getQueryData<DecryptedPool[]>(
+        poolKeys.list(),
+      );
+
+      queryClient.setQueryData<DecryptedPool[]>(poolKeys.list(), (old) => {
+        if (!old) return old;
+
+        const nextOrder = new Map(
+          poolIds.map((poolId, index) => [poolId, index]),
+        );
+
+        return old
+          .map((pool) => ({
+            ...pool,
+            sort_order: nextOrder.get(pool.id) ?? pool.sort_order,
+          }))
+          .sort((a, b) => {
+            if (a.type === "free") return -1;
+            if (b.type === "free") return 1;
+            return a.sort_order - b.sort_order;
+          });
+      });
+
+      return { previousPools };
+    },
+    onError: (err, poolIds, context) => {
+      if (context?.previousPools) {
+        queryClient.setQueryData(poolKeys.list(), context.previousPools);
+      }
+    },
+    onSuccess: (data) => {
+      if (data.persisted !== false) {
+        queryClient.invalidateQueries({ queryKey: poolKeys.list() });
+      }
     },
   });
 }

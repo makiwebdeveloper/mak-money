@@ -16,6 +16,7 @@ import {
   type EncryptedData,
 } from '../services/encryption-service';
 import {
+  ENCRYPTION_KEY_CHANGED_EVENT,
   getCachedUserKey,
   hasUserKey,
   clearKeyCache,
@@ -35,11 +36,7 @@ export function useEncryption() {
   const [isKeyAvailable, setIsKeyAvailable] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    checkKeyAvailability();
-  }, []);
-
-  const checkKeyAvailability = async () => {
+  const checkKeyAvailability = useCallback(async () => {
     try {
       const hasKey = await hasUserKey();
       setIsKeyAvailable(hasKey);
@@ -49,7 +46,23 @@ export function useEncryption() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    checkKeyAvailability();
+
+    window.addEventListener(
+      ENCRYPTION_KEY_CHANGED_EVENT,
+      checkKeyAvailability,
+    );
+
+    return () => {
+      window.removeEventListener(
+        ENCRYPTION_KEY_CHANGED_EVENT,
+        checkKeyAvailability,
+      );
+    };
+  }, [checkKeyAvailability]);
 
   const encrypt = useCallback(async <T,>(data: T): Promise<EncryptedData> => {
     const key = await getCachedUserKey();
@@ -77,7 +90,7 @@ export function useEncryption() {
 
   const refreshKeyStatus = useCallback(() => {
     checkKeyAvailability();
-  }, []);
+  }, [checkKeyAvailability]);
 
   return {
     encrypt,
@@ -264,6 +277,7 @@ export function usePoolEncryption() {
         color: string;
         icon: string;
         is_active: boolean;
+        sort_order?: number;
         created_at: string;
         updated_at: string;
         encrypted_data: EncryptedData | null;
@@ -283,6 +297,7 @@ export function usePoolEncryption() {
         color: row.color,
         icon: row.icon,
         is_active: row.is_active,
+        sort_order: row.sort_order ?? 0,
         created_at: row.created_at,
         updated_at: row.updated_at,
       };
