@@ -7,6 +7,7 @@ import { useAccounts } from "@/lib/hooks/useAccounts";
 import { useCreateTransaction } from "@/lib/hooks/useTransactions";
 import { useFreeBalance, usePools } from "@/lib/hooks/usePools";
 import { useAllocations } from "@/lib/hooks/useAllocations";
+import { useActivePoolId } from "@/lib/hooks/useUser";
 import { CurrencyDisplay } from "@/components/ui/currency-display";
 import { CurrencyCode, CURRENCIES } from "@/lib/constants/currencies";
 import {
@@ -35,12 +36,17 @@ export default function QuickTransactionModal({
   const { data: accounts = [] } = useAccounts();
   const { data: pools = [] } = usePools();
   const { data: allocations = [] } = useAllocations();
+  const { data: activePoolId = null } = useActivePoolId();
   const { data: freeBalance = 0 } = useFreeBalance();
   const createTransaction = useCreateTransaction();
 
   const selectedAccountId = accountId || accounts[0]?.id || "";
+  const fallbackPoolId =
+    activePoolId && pools.some((pool) => pool.id === activePoolId)
+      ? activePoolId
+      : pools.find((pool) => pool.type === "free")?.id || pools[0]?.id || "";
   const selectedPoolId =
-    poolId || pools.find((pool) => pool.type === "free")?.id || pools[0]?.id || "";
+    poolId || fallbackPoolId;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -86,6 +86,7 @@ export type Database = {
           email: string;
           name: string | null;
           default_currency: string | null;
+          active_pool_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -94,6 +95,7 @@ export type Database = {
           email: string;
           name?: string | null;
           default_currency?: string | null;
+          active_pool_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -102,6 +104,7 @@ export type Database = {
           email?: string;
           name?: string | null;
           default_currency?: string | null;
+          active_pool_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };

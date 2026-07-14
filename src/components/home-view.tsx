@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { CURRENCIES, CurrencyCode } from "@/lib/constants/currencies";
 import { formatNumber } from "@/lib/utils";
-import { useFreeBalance } from "@/lib/hooks/usePools";
+import { useFreeBalance, usePools } from "@/lib/hooks/usePools";
+import { useAllocations } from "@/lib/hooks/useAllocations";
+import { useActivePoolId } from "@/lib/hooks/useUser";
 import { useTotalBalance, useAccounts } from "@/lib/hooks/useAccounts";
 import { useTransactions } from "@/lib/hooks/useTransactions";
 import { DecryptedTransaction } from "@/lib/types/database";
@@ -339,6 +341,11 @@ export function HomeView({
 }: HomeViewProps) {
   // Use react-query hooks for live updates with encrypted data
   const { data: freeBalanceData, isLoading: freeLoading } = useFreeBalance();
+  const { data: poolsData = [], isLoading: poolsLoading } = usePools();
+  const { data: allocationsData = [], isLoading: allocationsLoading } =
+    useAllocations();
+  const { data: activePoolId = null, isLoading: activePoolLoading } =
+    useActivePoolId();
   const { data: balanceData, isLoading: balanceLoading } =
     useTotalBalance(initialCurrency);
   const { data: transactionsData } = useTransactions();
@@ -357,8 +364,28 @@ export function HomeView({
   const freeBalance = freeBalanceData ?? initialFreeBalance;
   const accountsCount = balanceData?.accountsCount ?? initialAccountsCount;
   const currency = (balanceData?.currency as CurrencyCode) ?? initialCurrency;
+  const activePool = activePoolId
+    ? poolsData.find((pool) => pool.id === activePoolId && pool.is_active)
+    : null;
+  const activePoolBalance =
+    activePool && activePool.type !== "free"
+      ? allocationsData
+          .filter((allocation) => allocation.pool_id === activePool.id)
+          .reduce((sum, allocation) => sum + (allocation.amount || 0), 0)
+      : freeBalance;
+  const activeFundsLabel =
+    activePool && activePool.type !== "free" ? activePool.name : "Free Funds";
+  const activeFundsHelper =
+    activePool && activePool.type !== "free"
+      ? "Active spending pool"
+      : "Available for expenses";
 
-  const isDecrypting = balanceLoading || freeLoading;
+  const isDecrypting =
+    balanceLoading ||
+    freeLoading ||
+    poolsLoading ||
+    allocationsLoading ||
+    activePoolLoading;
 
   // Use decrypted transactions or fallback to empty array
   const transactions = useMemo(() => transactionsData ?? [], [transactionsData]);
@@ -510,14 +537,14 @@ export function HomeView({
           </div>
         </div>
 
-        {/* Free Funds */}
+        {/* Active Funds */}
         <div className="card-glass group relative overflow-hidden p-6">
           <div className="absolute inset-0 bg-gradient-to-br from-green-500/20 via-emerald-400/10 to-transparent opacity-50 group-hover:opacity-75 smooth-transition"></div>
           <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/20 rounded-full blur-3xl"></div>
           <div className="relative">
             <div className="mb-3 flex items-center gap-2">
               <div className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
-                Free Funds
+                {activeFundsLabel}
               </div>
               {isLoading && (
                 <div className="flex items-center gap-1 text-xs text-green-600">
@@ -528,14 +555,14 @@ export function HomeView({
               <div className="flex-1 h-px bg-gradient-to-r from-muted-foreground/30 to-transparent"></div>
             </div>
             <div className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 dark:from-green-400 dark:to-emerald-300 bg-clip-text text-transparent mb-2">
-              {isLoading ? "••••••" : formatNumber(freeBalance)}
+              {isLoading ? "••••••" : formatNumber(activePoolBalance)}
             </div>
             <div className="text-xl sm:text-2xl font-semibold text-accent mb-4">
               {currency}
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <div className="w-2 h-2 rounded-full bg-green-500"></div>
-              <span>Available for expenses</span>
+              <span>{activeFundsHelper}</span>
             </div>
           </div>
         </div>

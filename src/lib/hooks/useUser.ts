@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CurrencyCode } from "@/lib/constants/currencies";
 import { convertCurrency } from "@/lib/constants/exchange-rates";
 import { useState, useEffect } from "react";
@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 export const userKeys = {
   all: ["user"] as const,
   currency: () => [...userKeys.all, "currency"] as const,
+  activePool: () => [...userKeys.all, "active-pool"] as const,
 };
 
 // Get user's default currency
@@ -66,4 +67,58 @@ export function useCurrencyConverter(
     isConverting,
     needsConversion: fromCurrency !== defaultCurrency,
   };
+}
+
+export function useActivePoolId() {
+  return useQuery({
+    queryKey: userKeys.activePool(),
+    queryFn: async (): Promise<string | null> => {
+      const response = await fetch("/api/user/active-pool");
+      if (!response.ok) {
+        throw new Error("Failed to fetch active pool");
+      }
+      const data = await response.json();
+      return data.active_pool_id || null;
+    },
+  });
+}
+
+export function useSetActivePool() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (activePoolId: string | null) => {
+      const response = await fetch("/api/user/active-pool", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active_pool_id: activePoolId }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update active pool");
+      }
+
+      return response.json();
+    },
+    onMutate: async (activePoolId) => {
+      await queryClient.cancelQueries({ queryKey: userKeys.activePool() });
+      const previousActivePoolId = queryClient.getQueryData<string | null>(
+        userKeys.activePool(),
+      );
+
+      queryClient.setQueryData(userKeys.activePool(), activePoolId);
+
+      return { previousActivePoolId };
+    },
+    onError: (_error, _activePoolId, context) => {
+      queryClient.setQueryData(
+        userKeys.activePool(),
+        context?.previousActivePoolId ?? null,
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.activePool() });
+    },
+  });
 }

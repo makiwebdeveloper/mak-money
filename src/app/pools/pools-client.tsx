@@ -8,7 +8,7 @@ import AllocationManager from "@/components/allocation-manager";
 import { PoolsSkeleton } from "@/components/pools-skeleton";
 import ConfirmDeleteModal from "@/components/confirm-delete-modal";
 import { EncryptionKeyRequired } from "@/components/encryption-key-required";
-import { GripVertical, Trash2, WalletCards } from "lucide-react";
+import { CheckCircle2, GripVertical, Star, Trash2, WalletCards } from "lucide-react";
 import {
   usePools,
   useCreatePool,
@@ -18,6 +18,7 @@ import {
   useReorderPools,
 } from "@/lib/hooks/usePools";
 import { useAllocations } from "@/lib/hooks/useAllocations";
+import { useActivePoolId, useSetActivePool } from "@/lib/hooks/useUser";
 
 type Pool = Database["public"]["Tables"]["money_pools"]["Row"] & {
   balance?: number;
@@ -47,10 +48,12 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
   const { data: freeBalance = 0 } = useFreeBalance();
   const { data: excludedBalance = 0, hasExcludedAccounts = false } =
     useExcludedAccountsBalance();
+  const { data: activePoolId = null } = useActivePoolId();
 
   const createPool = useCreatePool();
   const deletePool = usePermanentDeletePool();
   const reorderPools = useReorderPools();
+  const setActivePool = useSetActivePool();
 
   const [isCreating, setIsCreating] = useState(false);
   const [newPoolName, setNewPoolName] = useState("");
@@ -68,6 +71,8 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
 
   const currencySymbol =
     CURRENCIES.find((c) => c.code === currency)?.symbol || "$";
+  const freePool = pools.find((pool) => pool.type === "free");
+  const effectiveActivePoolId = activePoolId || freePool?.id || null;
 
   // Only show active pools (excluding Free pool since it's shown separately above)
   const displayedPools = useMemo(
@@ -129,6 +134,17 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
       (sum, allocation) => sum + (allocation.amount || 0),
       0,
     );
+  };
+
+  const handleSetActivePool = async (poolId: string | null) => {
+    if (setActivePool.isPending) return;
+
+    try {
+      await setActivePool.mutateAsync(poolId);
+    } catch (error: any) {
+      console.error("Error setting active pool:", error);
+      alert(`Error: ${error.message || "Failed to set active pool"}`);
+    }
   };
 
   const openAllocation = (pool: Pool) => {
@@ -194,7 +210,9 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
     .filter((p) => p.is_active && p.type !== "free")
     .reduce((sum, pool) => sum + getPoolBalance(pool.id), 0);
 
-  const isLoading = Boolean(createPool.isPending || deletePool.isPending);
+  const isLoading = Boolean(
+    createPool.isPending || deletePool.isPending || setActivePool.isPending,
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-background/95 pt-12 md:pt-0 pb-24 md:pb-0">
@@ -219,9 +237,30 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
           </div>
           <div className="card-glass p-3 sm:p-5 group">
             <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 smooth-transition rounded-2xl"></div>
-            <p className="relative text-xs font-semibold text-muted-foreground">
-              Free Funds
-            </p>
+            <div className="relative flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold text-muted-foreground">
+                Free Funds
+              </p>
+              {freePool && (
+                <button
+                  type="button"
+                  onClick={() => handleSetActivePool(null)}
+                  disabled={isLoading || effectiveActivePoolId === freePool.id}
+                  className={`smooth-transition rounded-lg px-2 py-1 text-xs font-semibold active:scale-95 disabled:opacity-70 ${
+                    effectiveActivePoolId === freePool.id
+                      ? "bg-green-500 text-white"
+                      : "glass hover:shadow-md"
+                  }`}
+                  title={
+                    effectiveActivePoolId === freePool.id
+                      ? "Free is active"
+                      : "Use Free by default"
+                  }
+                >
+                  {effectiveActivePoolId === freePool.id ? "Active" : "Set active"}
+                </button>
+              )}
+            </div>
             <p className="relative mt-1 sm:mt-2 text-xl sm:text-3xl font-bold text-green-600 dark:text-green-400">
               {currencySymbol}
               {formatNumber(freeBalance)}
@@ -373,6 +412,34 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
                     </div>
                     {/* Mobile actions */}
                     <div className="flex gap-1 shrink-0">
+                      <button
+                        draggable={false}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleSetActivePool(pool.id);
+                        }}
+                        disabled={
+                          isLoading ||
+                          pool.id.startsWith("temp-") ||
+                          effectiveActivePoolId === pool.id
+                        }
+                        className={`smooth-transition rounded-md p-1.5 active:scale-95 disabled:opacity-70 ${
+                          effectiveActivePoolId === pool.id
+                            ? "bg-green-500 text-white"
+                            : "glass hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400"
+                        }`}
+                        title={
+                          effectiveActivePoolId === pool.id
+                            ? "Active pool"
+                            : "Use by default"
+                        }
+                      >
+                        {effectiveActivePoolId === pool.id ? (
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                        ) : (
+                          <Star className="h-3.5 w-3.5" />
+                        )}
+                      </button>
                       {pool.type !== "free" && (
                         <button
                           draggable={false}
@@ -425,9 +492,16 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
                         style={{ backgroundColor: pool.color }}
                       />
                       <div className="min-w-0">
-                        <h3 className="text-lg font-bold text-foreground truncate">
-                          {pool.name}
-                        </h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="truncate text-lg font-bold text-foreground">
+                            {pool.name}
+                          </h3>
+                          {effectiveActivePoolId === pool.id && (
+                            <span className="rounded-full bg-green-500 px-2 py-0.5 text-xs font-bold text-white">
+                              Active
+                            </span>
+                          )}
+                        </div>
                         <p className="mt-1 text-xs capitalize text-muted-foreground">
                           {pool.type === "free"
                             ? "Free"
@@ -448,6 +522,34 @@ export default function PoolsClient({ currency }: PoolsClientProps) {
 
                       {/* Desktop actions */}
                       <div className="flex gap-3">
+                        <button
+                          draggable={false}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleSetActivePool(pool.id);
+                          }}
+                          disabled={
+                            isLoading ||
+                            pool.id.startsWith("temp-") ||
+                            effectiveActivePoolId === pool.id
+                          }
+                          className={`smooth-transition rounded-lg p-2 active:scale-95 touch-target disabled:opacity-70 ${
+                            effectiveActivePoolId === pool.id
+                              ? "bg-green-500 text-white"
+                              : "glass hover:shadow-md hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400"
+                          }`}
+                          title={
+                            effectiveActivePoolId === pool.id
+                              ? "Active pool"
+                              : "Use by default"
+                          }
+                        >
+                          {effectiveActivePoolId === pool.id ? (
+                            <CheckCircle2 className="h-5 w-5" />
+                          ) : (
+                            <Star className="h-5 w-5" />
+                          )}
+                        </button>
                         {pool.type !== "free" && (
                           <button
                             draggable={false}
