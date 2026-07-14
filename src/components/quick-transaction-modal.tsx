@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Database } from "@/lib/types/database";
 import { formatNumber } from "@/lib/utils";
 import { useAccounts } from "@/lib/hooks/useAccounts";
 import { useCreateTransaction } from "@/lib/hooks/useTransactions";
-import { useFreeBalance } from "@/lib/hooks/usePools";
+import { useFreeBalance, usePools } from "@/lib/hooks/usePools";
+import { useAllocations } from "@/lib/hooks/useAllocations";
 import { CurrencyDisplay } from "@/components/ui/currency-display";
 import { CurrencyCode, CURRENCIES } from "@/lib/constants/currencies";
 import {
@@ -27,20 +28,19 @@ export default function QuickTransactionModal({
   const [type, setType] = useState<"income" | "expense">("expense");
   const [amount, setAmount] = useState("");
   const [accountId, setAccountId] = useState("");
+  const [poolId, setPoolId] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
 
   const { data: accounts = [] } = useAccounts();
+  const { data: pools = [] } = usePools();
+  const { data: allocations = [] } = useAllocations();
   const { data: freeBalance = 0 } = useFreeBalance();
   const createTransaction = useCreateTransaction();
 
-  useEffect(() => {
-    if (isOpen && accounts.length > 0 && !accountId) {
-      setAccountId(accounts[0].id);
-    }
-    // Reset category when type changes
-    setCategory("");
-  }, [isOpen, accounts, accountId, type]);
+  const selectedAccountId = accountId || accounts[0]?.id || "";
+  const selectedPoolId =
+    poolId || pools.find((pool) => pool.type === "free")?.id || pools[0]?.id || "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,13 +53,30 @@ export default function QuickTransactionModal({
       return;
     }
 
-    if (!accountId) {
+    if (!selectedAccountId) {
       alert("Please select an account");
       return;
     }
 
+    if (!selectedPoolId) {
+      alert("Please select a pool");
+      return;
+    }
+
+    const selectedPool = pools.find((pool) => pool.id === selectedPoolId);
+    const selectedAllocationAmount =
+      allocations.find(
+        (allocation) =>
+          allocation.account_id === selectedAccountId &&
+          allocation.pool_id === selectedPoolId,
+      )?.amount || 0;
+
     // Check free funds for expenses
-    if (type === "expense" && amountValue > freeBalance) {
+    if (
+      type === "expense" &&
+      selectedPool?.type === "free" &&
+      amountValue > freeBalance
+    ) {
       const shouldContinue = confirm(
         `⚠️ Insufficient free funds!\n\n` +
           `Available: ${formatNumber(freeBalance)}\n` +
@@ -69,14 +86,28 @@ export default function QuickTransactionModal({
       if (!shouldContinue) return;
     }
 
+    if (
+      type === "expense" &&
+      selectedPool?.type !== "free" &&
+      amountValue > selectedAllocationAmount
+    ) {
+      alert(
+        `Insufficient funds in "${selectedPool?.name || "selected pool"}".\n` +
+          `Available: ${formatNumber(selectedAllocationAmount)}\n` +
+          `Required: ${formatNumber(amountValue)}`,
+      );
+      return;
+    }
+
     try {
-      const selectedAccount = accounts.find((a) => a.id === accountId);
+      const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
 
       await createTransaction.mutateAsync({
         type,
         amount: amountValue,
         currency: selectedAccount?.currency || "USD",
-        account_id: accountId,
+        account_id: selectedAccountId,
+        pool_id: selectedPoolId,
         category: category || undefined,
         description: description || undefined,
       });
@@ -146,7 +177,10 @@ export default function QuickTransactionModal({
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setType("income")}
+                onClick={() => {
+                  setType("income");
+                  setCategory("");
+                }}
                 className={`smooth-transition rounded-lg px-2 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm ${
                   type === "income"
                     ? "bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30"
@@ -157,7 +191,10 @@ export default function QuickTransactionModal({
               </button>
               <button
                 type="button"
-                onClick={() => setType("expense")}
+                onClick={() => {
+                  setType("expense");
+                  setCategory("");
+                }}
                 className={`smooth-transition rounded-lg px-2 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm ${
                   type === "expense"
                     ? "bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30"
@@ -199,7 +236,7 @@ export default function QuickTransactionModal({
             </label>
             <select
               id="account"
-              value={accountId}
+              value={selectedAccountId}
               onChange={(e) => setAccountId(e.target.value)}
               className="glass-sm mobile-input w-full rounded-lg px-3 py-2 sm:py-2.5 text-sm sm:text-base text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
               required
@@ -213,6 +250,41 @@ export default function QuickTransactionModal({
                 return (
                   <option key={account.id} value={account.id}>
                     {account.name} ({getCurrencySymbol(account.currency)} {formatNumber(account.balance || 0)})
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+
+          {/* Pool */}
+          <div>
+            <label
+              htmlFor="pool"
+              className="mb-1.5 block text-xs font-semibold text-foreground"
+            >
+              {type === "income" ? "Add to pool *" : "Take from pool *"}
+            </label>
+            <select
+              id="pool"
+              value={selectedPoolId}
+              onChange={(e) => setPoolId(e.target.value)}
+              className="glass-sm mobile-input w-full rounded-lg px-3 py-2 sm:py-2.5 text-sm sm:text-base text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
+              required
+            >
+              <option value="">Select pool</option>
+              {pools.map((pool) => {
+                const allocationAmount =
+                  pool.type === "free"
+                    ? freeBalance
+                    : allocations.find(
+                        (allocation) =>
+                          allocation.account_id === selectedAccountId &&
+                          allocation.pool_id === pool.id,
+                      )?.amount || 0;
+
+                return (
+                  <option key={pool.id} value={pool.id}>
+                    {pool.name} ({formatNumber(allocationAmount)})
                   </option>
                 );
               })}

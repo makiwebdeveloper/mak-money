@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Database, DecryptedTransaction } from "@/lib/types/database";
-import { accountKeys, useAccounts } from "./useAccounts";
+import { accountKeys } from "./useAccounts";
 import { poolKeys } from "./usePools";
+import { allocationKeys } from "./useAllocations";
 import {
   useTransactionEncryption,
   useAccountEncryption,
+  useAllocationEncryption,
 } from "./useEncryption";
 
 type Transaction = Database["public"]["Tables"]["transactions"]["Row"];
@@ -66,6 +68,7 @@ export function useCreateTransaction() {
   const queryClient = useQueryClient();
   const { encryptTransaction } = useTransactionEncryption();
   const { encryptAccount } = useAccountEncryption();
+  const { encryptAllocation } = useAllocationEncryption();
 
   return useMutation({
     mutationFn: async (data: {
@@ -73,6 +76,7 @@ export function useCreateTransaction() {
       amount: number;
       currency: string;
       account_id?: string;
+      pool_id?: string;
       from_account_id?: string;
       to_account_id?: string;
       category?: string;
@@ -110,6 +114,43 @@ export function useCreateTransaction() {
       const currentAccounts = queryClient.getQueryData<any[]>(
         accountKeys.list(),
       );
+      const currentPools = queryClient.getQueryData<any[]>(poolKeys.list());
+      const currentAllocations = queryClient.getQueryData<any[]>(
+        allocationKeys.list(),
+      );
+
+      const updatePoolAllocation = async (
+        accountId: string,
+        poolId: string | undefined,
+        difference: number,
+      ) => {
+        if (!poolId) return;
+
+        const pool = currentPools?.find((item) => item.id === poolId);
+        if (!pool || pool.type === "free") return;
+
+        const allocation = currentAllocations?.find(
+          (item) => item.account_id === accountId && item.pool_id === poolId,
+        );
+        const currentAmount = allocation?.amount || 0;
+        const newAmount = Math.max(0, currentAmount + difference);
+        const encryptedAllocationData = await encryptAllocation(newAmount);
+
+        const allocationResponse = await fetch("/api/allocations/transfer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            account_id: accountId,
+            pool_id: poolId,
+            encrypted_data: encryptedAllocationData,
+          }),
+        });
+
+        if (!allocationResponse.ok) {
+          const error = await allocationResponse.json();
+          throw new Error(error.error || "Failed to update pool allocation");
+        }
+      };
 
       if (data.type === "income" && data.account_id) {
         const account = currentAccounts?.find(
@@ -127,6 +168,8 @@ export function useCreateTransaction() {
             body: JSON.stringify({ encrypted_data: encryptedAccountData }),
           });
         }
+
+        await updatePoolAllocation(data.account_id, data.pool_id, data.amount);
       } else if (data.type === "expense" && data.account_id) {
         const account = currentAccounts?.find(
           (acc) => acc.id === data.account_id,
@@ -143,6 +186,8 @@ export function useCreateTransaction() {
             body: JSON.stringify({ encrypted_data: encryptedAccountData }),
           });
         }
+
+        await updatePoolAllocation(data.account_id, data.pool_id, -data.amount);
       } else if (data.type === "transfer") {
         // Update both accounts
         if (data.from_account_id) {
@@ -235,6 +280,7 @@ export function useCreateTransaction() {
       queryClient.invalidateQueries({ queryKey: transactionKeys.list() });
       queryClient.invalidateQueries({ queryKey: accountKeys.list() });
       queryClient.invalidateQueries({ queryKey: poolKeys.list() });
+      queryClient.invalidateQueries({ queryKey: allocationKeys.list() });
     },
   });
 }
